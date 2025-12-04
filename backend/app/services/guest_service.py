@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
 from typing import Optional, List
 
-from app.db import models
-from app.schemas.guest import GuestCreate, GuestUpdate
+from ..db import models
+from ..schemas.guest import GuestCreate, GuestUpdate
 
 class GuestService:
 

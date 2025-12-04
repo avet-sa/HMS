@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hotel Management System</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h1>Hotel Management System</h1>
+
+  <!-- Auth Section -->
+  <section id="auth">
+    <h2>Register / Login</h2>
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button onclick="register()">Register</button>
+    <button onclick="login()">Login</button>
+    <p id="auth-message"></p>
+  </section>
+
+  <!-- Rooms Section -->
+  <section id="rooms">
+    <h2>Rooms</h2>
+    <button onclick="listRooms()">Refresh Rooms</button>
+    <ul id="room-list"></ul>
+    <h3>Add Room</h3>
+    <input type="text" id="room-number" placeholder="Room Number">
+    <input type="number" id="room-price" placeholder="Price per Night">
+    <button onclick="createRoom()">Add Room</button>
+  </section>
+
+  <!-- Guests Section -->
+  <section id="guests">
+    <h2>Guests</h2>
+    <button onclick="listGuests()">Refresh Guests</button>
+    <ul id="guest-list"></ul>
+    <h3>Add Guest</h3>
+    <input type="text" id="guest-name" placeholder="Name">
+    <input type="text" id="guest-surname" placeholder="Surname">
+    <input type="email" id="guest-email" placeholder="Email">
+    <button onclick="createGuest()">Add Guest</button>
+  </section>
+
+  <!-- Bookings Section -->
+  <section id="bookings">
+    <h2>Bookings</h2>
+    <button onclick="listBookings()">Refresh Bookings</button>
+    <ul id="booking-list"></ul>
+    <h3>Add Booking</h3>
+    <input type="number" id="booking-guest-id" placeholder="Guest ID">
+    <input type="number" id="booking-room-id" placeholder="Room ID">
+    <input type="date" id="booking-checkin">
+    <input type="date" id="booking-checkout">
+    <button onclick="createBooking()">Add Booking</button>
+  </section>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

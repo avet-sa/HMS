@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 # Import routers
-from app.api import rooms, guests, bookings, auth
+from .api import rooms, guests, bookings, auth
 
 app = FastAPI(
     title="Hotel Management System",
@@ -24,6 +25,8 @@ app.include_router(rooms.router, prefix="/rooms", tags=["Rooms"])
 app.include_router(guests.router, prefix="/guests", tags=["Guests"])
 app.include_router(bookings.router, prefix="/bookings", tags=["Bookings"])
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
+
+app.mount("/static", StaticFiles(directory="frontend"), name="static")
 
 # Root endpoint
 @app.get("/")

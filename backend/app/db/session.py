@@ -1,13 +1,28 @@
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from pydantic import BaseSettings
+import os
+from dotenv import load_dotenv
 
-class Settings(BaseSettings):
-    DATABASE_URL: str = "postgresql+asyncpg://user:password@localhost/dbname"
-    class Config:
-        env_file = ".env"
-        
-settings = Settings()
+# Load environment variables from .env (if present)
+load_dotenv()
 
-engine = create_async_engine(settings.DATABASE_URL, echo=True)
-async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+# Fallback to a local default if DATABASE_URL is not set
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql://user:password@localhost/dbname",
+)
+
+# If an async driver was specified (e.g. '+asyncpg'), SQLAlchemy sync engine
+# can't use it. Replace the async suffix to use the sync driver from requirements.
+sync_db_url = DATABASE_URL.replace("+asyncpg", "")
+
+engine = create_engine(sync_db_url, echo=True, future=True)
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False)
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
 from typing import Optional
 
-from app.db import models
-from app.schemas.user import UserCreate, UserUpdate
+from ..db import models
+from ..schemas.user import UserCreate, UserUpdate
 
 class UserService:
 

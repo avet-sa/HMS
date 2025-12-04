@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
 from datetime import datetime
 
-from app.db import models
-from app.schemas.booking import BookingCreate, BookingUpdate
-from app.utils.availability import is_room_available
+from ..db import models
+from ..schemas.booking import BookingCreate, BookingUpdate
+from ..utils.availability import is_room_available
 
 
 class BookingService:

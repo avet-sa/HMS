@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from app.db import models
-from app.schemas.room import RoomCreate, RoomUpdate
+from ..db import models
+from ..schemas.room import RoomCreate, RoomUpdate
 
 
 class RoomService:

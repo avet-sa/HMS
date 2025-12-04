@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 
-from app.db.session import get_db
-from app.schemas.room import RoomCreate, RoomUpdate, RoomResponse
-from app.services.room_service import RoomService
+from ..db.session import get_db
+from ..schemas.room import RoomCreate, RoomUpdate, RoomResponse
+from ..services.room_service import RoomService
 
 router = APIRouter()
 
