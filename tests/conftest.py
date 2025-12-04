@@ -7,9 +7,9 @@ from fastapi.testclient import TestClient
 import sys
 sys.path.append(".")
 
-from app.main import app
-from app.db.session import get_db
-from app.db.models import Base
+from backend.app.main import app
+from backend.app.db.session import get_db
+from backend.app.db.models import Base
 
 # Use an in-memory SQLite database for tests
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
