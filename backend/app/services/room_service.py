@@ -9,9 +9,13 @@ class RoomService:
     def create_room(db: Session, data: RoomCreate) -> models.Room:
         room = models.Room(
             number=data.number,
-            type=data.type,
-            price=data.price,
-            is_available=True
+            room_type_id=data.room_type_id,
+            price_per_night=data.price_per_night,
+            square_meters=data.square_meters,
+            floor=data.floor,
+            maintenance_status=data.maintenance_status or "available",
+            has_view=data.has_view or False,
+            is_smoking=data.is_smoking or False
         )
         db.add(room)
         db.commit()
@@ -55,6 +59,6 @@ class RoomService:
         if not room:
             return None
 
-        room.is_available = value
+        room.maintenance_status = "available" if value else "out_of_service"
         db.commit()
         return room

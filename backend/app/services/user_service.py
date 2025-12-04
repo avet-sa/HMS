@@ -11,7 +11,7 @@ class UserService:
         user = models.User(
             username=user_in.username,
             password_hash=user_in.password,
-            permission_level=user_in.permission_level
+            # permission_level defaults to REGULAR in the model
         )
         db.add(user)
         db.commit()

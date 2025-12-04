@@ -3,57 +3,188 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hotel Management System</title>
+  <title>HMS - Hotel Management System</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>Hotel Management System</h1>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-content">
+        <h1 class="logo">HMS</h1>
+        <p class="tagline">Property Management System</p>
+      </div>
+      <div class="user-section">
+        <button id="btn-toggle-theme" class="theme-toggle" title="Toggle dark/light theme">🌙</button>
+        <span id="user-display" class="user-name">Guest</span>
+        <button id="btn-logout" class="btn-logout" style="display: none;">Logout</button>
+      </div>
+    </header>
 
-  <!-- Auth Section -->
-  <section id="auth">
-    <h2>Register / Login</h2>
-    <input type="text" id="username" placeholder="Username">
-    <input type="password" id="password" placeholder="Password">
-    <button onclick="register()">Register</button>
-    <button onclick="login()">Login</button>
-    <p id="auth-message"></p>
-  </section>
+    <!-- Auth Modal -->
+    <div id="auth-modal" class="modal modal-active">
+      <div class="modal-content">
+        <h2>Welcome Back</h2>
+        <p class="modal-subtitle">Sign in to your account</p>
+        <form id="auth-form">
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" placeholder="Enter your username" aria-label="username">
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Enter your password" aria-label="password">
+          </div>
+          <div id="auth-message" class="message" aria-live="polite"></div>
+          <button type="button" id="btn-login" class="btn btn-primary btn-full">Sign In</button>
+          <button type="button" id="btn-register" class="btn btn-secondary btn-full">Create Account</button>
+        </form>
+      </div>
+    </div>
 
-  <!-- Rooms Section -->
-  <section id="rooms">
-    <h2>Rooms</h2>
-    <button onclick="listRooms()">Refresh Rooms</button>
-    <ul id="room-list"></ul>
-    <h3>Add Room</h3>
-    <input type="text" id="room-number" placeholder="Room Number">
-    <input type="number" id="room-price" placeholder="Price per Night">
-    <button onclick="createRoom()">Add Room</button>
-  </section>
+    <!-- Main Dashboard -->
+    <main id="dashboard" class="dashboard" style="display: none;">
+      <!-- Navigation Tabs -->
+      <nav class="nav-tabs">
+        <button class="nav-tab active" data-tab="rooms">Rooms</button>
+        <button class="nav-tab" data-tab="guests">Guests</button>
+        <button class="nav-tab" data-tab="bookings">Bookings</button>
+      </nav>
 
-  <!-- Guests Section -->
-  <section id="guests">
-    <h2>Guests</h2>
-    <button onclick="listGuests()">Refresh Guests</button>
-    <ul id="guest-list"></ul>
-    <h3>Add Guest</h3>
-    <input type="text" id="guest-name" placeholder="Name">
-    <input type="text" id="guest-surname" placeholder="Surname">
-    <input type="email" id="guest-email" placeholder="Email">
-    <button onclick="createGuest()">Add Guest</button>
-  </section>
+      <!-- Rooms Tab -->
+      <section id="rooms" class="tab-content active">
+        <div class="section-header">
+          <h2>Room Inventory</h2>
+          <button id="btn-refresh-rooms" class="btn btn-secondary btn-sm">Refresh</button>
+        </div>
+        <p id="rooms-message" class="message" aria-live="polite"></p>
 
-  <!-- Bookings Section -->
-  <section id="bookings">
-    <h2>Bookings</h2>
-    <button onclick="listBookings()">Refresh Bookings</button>
-    <ul id="booking-list"></ul>
-    <h3>Add Booking</h3>
-    <input type="number" id="booking-guest-id" placeholder="Guest ID">
-    <input type="number" id="booking-room-id" placeholder="Room ID">
-    <input type="date" id="booking-checkin">
-    <input type="date" id="booking-checkout">
-    <button onclick="createBooking()">Add Booking</button>
-  </section>
+        <div class="content-wrapper">
+          <!-- Room List -->
+          <div class="list-panel">
+            <h3>Properties</h3>
+            <ul id="room-list" class="list"></ul>
+          </div>
+
+          <!-- Add Room Form -->
+          <div class="form-panel">
+            <h3>Add New Room</h3>
+            <form id="room-form">
+              <div class="form-group">
+                <label for="room-number">Room Number</label>
+                <input type="text" id="room-number" placeholder="e.g., 101">
+              </div>
+              <div class="form-group">
+                <label for="room-type">Room Type</label>
+                <select id="room-type">
+                  <option value="">Select Type</option>
+                  <option value="1">Single</option>
+                  <option value="2">Double</option>
+                  <option value="3">Suite</option>
+                  <option value="4">Deluxe</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="room-price">Price per Night</label>
+                <input type="number" id="room-price" placeholder="0.00" step="0.01">
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="room-sqm">Square Meters</label>
+                  <input type="number" id="room-sqm" placeholder="e.g., 30">
+                </div>
+                <div class="form-group">
+                  <label for="room-floor">Floor</label>
+                  <input type="number" id="room-floor" placeholder="e.g., 1">
+                </div>
+              </div>
+              <button type="button" id="btn-add-room" class="btn btn-primary btn-full">Add Room</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- Guests Tab -->
+      <section id="guests" class="tab-content">
+        <div class="section-header">
+          <h2>Guest Management</h2>
+          <button id="btn-refresh-guests" class="btn btn-secondary btn-sm">Refresh</button>
+        </div>
+        <p id="guests-message" class="message" aria-live="polite"></p>
+
+        <div class="content-wrapper">
+          <!-- Guest List -->
+          <div class="list-panel">
+            <h3>Registered Guests</h3>
+            <ul id="guest-list" class="list"></ul>
+          </div>
+
+          <!-- Add Guest Form -->
+          <div class="form-panel">
+            <h3>Register Guest</h3>
+            <form id="guest-form">
+              <div class="form-group">
+                <label for="guest-name">First Name</label>
+                <input type="text" id="guest-name" placeholder="John">
+              </div>
+              <div class="form-group">
+                <label for="guest-surname">Last Name</label>
+                <input type="text" id="guest-surname" placeholder="Doe">
+              </div>
+              <div class="form-group">
+                <label for="guest-email">Email Address</label>
+                <input type="email" id="guest-email" placeholder="john@example.com">
+              </div>
+              <button type="button" id="btn-add-guest" class="btn btn-primary btn-full">Register Guest</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- Bookings Tab -->
+      <section id="bookings" class="tab-content">
+        <div class="section-header">
+          <h2>Reservations</h2>
+          <button id="btn-refresh-bookings" class="btn btn-secondary btn-sm">Refresh</button>
+        </div>
+        <p id="bookings-message" class="message" aria-live="polite"></p>
+
+        <div class="content-wrapper">
+          <!-- Bookings List -->
+          <div class="list-panel">
+            <h3>Active Bookings</h3>
+            <ul id="booking-list" class="list"></ul>
+          </div>
+
+          <!-- Add Booking Form -->
+          <div class="form-panel">
+            <h3>New Reservation</h3>
+            <form id="booking-form">
+              <div class="form-group">
+                <label for="booking-guest-id">Guest ID</label>
+                <input type="number" id="booking-guest-id" placeholder="e.g., 1">
+              </div>
+              <div class="form-group">
+                <label for="booking-room-id">Room ID</label>
+                <input type="number" id="booking-room-id" placeholder="e.g., 1">
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="booking-checkin">Check-in</label>
+                  <input type="date" id="booking-checkin">
+                </div>
+                <div class="form-group">
+                  <label for="booking-checkout">Check-out</label>
+                  <input type="date" id="booking-checkout">
+                </div>
+              </div>
+              <button type="button" id="btn-add-booking" class="btn btn-primary btn-full">Create Reservation</button>
+            </form>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
 
   <script src="js/app.js"></script>
 </body>

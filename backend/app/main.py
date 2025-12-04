@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 # Import routers
-from .api import rooms, guests, bookings, auth
+from .api import rooms, guests, bookings, auth, room_types
 
 app = FastAPI(
     title="Hotel Management System",
@@ -22,6 +22,7 @@ app.add_middleware(
 
 # Register routers
 app.include_router(rooms.router, prefix="/rooms", tags=["Rooms"])
+app.include_router(room_types.router, prefix="/room-types", tags=["Room Types"])
 app.include_router(guests.router, prefix="/guests", tags=["Guests"])
 app.include_router(bookings.router, prefix="/bookings", tags=["Bookings"])
 app.include_router(auth.router, prefix="/auth", tags=["Auth"])
