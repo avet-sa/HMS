@@ -9,7 +9,7 @@ function toggleTheme() {
   document.body.classList.toggle("dark-theme", isDarkTheme);
   const btn = document.getElementById("btn-toggle-theme");
   if (btn) btn.textContent = isDarkTheme ? "☀️" : "🌙";
-  try { localStorage.setItem("theme", isDarkTheme ? "dark" : "light"); } catch (e) {}
+  try { localStorage.setItem("theme", isDarkTheme ? "dark" : "light"); } catch (e) { }
 }
 
 function initTheme() {
@@ -85,13 +85,38 @@ async function login() {
 
   showMessage("auth-message", "Signing in...");
   try {
-    const data = await apiFetch(`/auth/login`, {
-      method: "POST",
-      body: JSON.stringify({ username, password })
+    // OAuth2 token endpoint expects form-encoded body
+    const params = new URLSearchParams();
+    params.append('username', username);
+    params.append('password', password);
+    params.append('grant_type', 'password');
+
+    const res = await fetch(`${API_URL}/auth/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString()
     });
-    authToken = data.token || authToken;
-    currentUser = username;
+    if (!res.ok) {
+      const txt = await res.text();
+      throw new Error(txt || res.statusText);
+    }
+    const data = await res.json();
+    authToken = data.access_token;
+
+    // Store token in localStorage
+    try { localStorage.setItem("authToken", authToken); } catch (e) { }
+
+    // Fetch user info to check permission level
+    const userInfo = await apiFetch("/users/me");
+    currentUser = userInfo;
+
     updateUserDisplay(username);
+
+    // Show admin link if user is admin
+    if (userInfo.permission_level === "ADMIN") {
+      document.getElementById("admin-link").style.display = "inline-flex";
+    }
+
     document.getElementById("username").value = "";
     document.getElementById("password").value = "";
     hideAuthModal();
@@ -134,8 +159,10 @@ async function register() {
 function logout() {
   authToken = null;
   currentUser = null;
+  try { localStorage.removeItem("authToken"); } catch (e) { }
   document.getElementById("user-display").textContent = "Guest";
   document.getElementById("btn-logout").style.display = "none";
+  document.getElementById("admin-link").style.display = "none";
   showAuthModal();
 }
 
@@ -370,11 +397,11 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".nav-tab").forEach(tab => {
     tab.addEventListener("click", (e) => {
       const tabName = e.target.dataset.tab;
-      
+
       // Update active tab button
       document.querySelectorAll(".nav-tab").forEach(t => t.classList.remove("active"));
       e.target.classList.add("active");
-      
+
       // Update active tab content
       document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
       document.getElementById(tabName).classList.add("active");
@@ -387,6 +414,29 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("guest-form")?.addEventListener("submit", (e) => e.preventDefault());
   document.getElementById("booking-form")?.addEventListener("submit", (e) => e.preventDefault());
 
-  // Show auth modal on start
-  showAuthModal();
+  // Check for stored token and auto-login
+  try {
+    const storedToken = localStorage.getItem("authToken");
+    if (storedToken) {
+      authToken = storedToken;
+      apiFetch("/users/me").then(userInfo => {
+        currentUser = userInfo;
+        updateUserDisplay(userInfo.username);
+        if (userInfo.permission_level === "ADMIN") {
+          document.getElementById("admin-link").style.display = "inline-flex";
+        }
+        hideAuthModal();
+        listRooms();
+        listGuests();
+        listBookings();
+      }).catch(() => {
+        // Token invalid, show auth
+        showAuthModal();
+      });
+    } else {
+      showAuthModal();
+    }
+  } catch (e) {
+    showAuthModal();
+  }
 });

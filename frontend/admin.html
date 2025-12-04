@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - HMS</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="admin.css">
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="logo">HMS</h1>
+                <p class="tagline">Admin Panel</p>
+            </div>
+            <div class="user-section">
+                <button id="btn-toggle-theme" class="theme-toggle" title="Toggle dark/light theme">🌙</button>
+                <a href="index.html" class="admin-link">🏠 Dashboard</a>
+                <span id="user-display" class="user-name">Guest</span>
+                <button id="btn-logout" class="btn-logout" style="display: none;">Logout</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main id="admin-panel" class="dashboard" style="display: none;">
+            <div class="admin-content">
+                <!-- Stats Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-info">
+                            <h3 id="total-users">0</h3>
+                            <p>Total Users</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">🛡️</div>
+                        <div class="stat-info">
+                            <h3 id="admin-users">0</h3>
+                            <p>Administrators</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">✅</div>
+                        <div class="stat-info">
+                            <h3 id="active-users">0</h3>
+                            <p>Active Users</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Management -->
+                <div class="admin-section">
+                    <div class="section-header">
+                        <h2>User Management</h2>
+                        <button id="btn-refresh-users" class="btn btn-secondary btn-sm">Refresh</button>
+                    </div>
+                    <p id="users-message" class="message" aria-live="polite"></p>
+
+                    <div class="content-wrapper">
+                        <!-- Users List -->
+                        <div class="users-table-panel">
+                            <h3>All Users</h3>
+                            <div class="table-wrapper">
+                                <table class="users-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Username</th>
+                                            <th>Permission</th>
+                                            <th>Status</th>
+                                            <th>Created</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="users-table-body">
+                                        <!-- Users will be populated here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Create User Form -->
+                        <div class="form-panel">
+                            <h3>Create New User</h3>
+                            <form id="create-user-form">
+                                <div class="form-group">
+                                    <label for="new-username">Username</label>
+                                    <input type="text" id="new-username" placeholder="Enter username" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="new-password">Password</label>
+                                    <input type="password" id="new-password" placeholder="Enter password" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="new-permission">Permission Level</label>
+                                    <select id="new-permission" required>
+                                        <option value="REGULAR">Regular User</option>
+                                        <option value="ADMIN">Administrator</option>
+                                    </select>
+                                </div>
+                                <button type="button" id="btn-create-user" class="btn btn-primary btn-full">Create
+                                    User</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Auth Required Message -->
+        <div id="auth-required" class="auth-required">
+            <div class="auth-box">
+                <h2>⚠️ Admin Access Required</h2>
+                <p>You must be logged in as an administrator to access this panel.</p>
+                <a href="index.html" class="btn btn-primary">Go to Login</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/admin.js"></script>
+</body>
+
+</html>

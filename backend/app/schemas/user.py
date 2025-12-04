@@ -10,11 +10,13 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str = Field(..., min_length=6)
+    permission_level: Optional[str] = "REGULAR"
 
 
 class UserUpdate(BaseModel):
     username: Optional[str] = Field(None, min_length=3, max_length=50)
     password: Optional[str] = Field(None, min_length=6)
+    permission_level: Optional[str] = None
     is_active: Optional[bool] = None
 
 

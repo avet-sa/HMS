@@ -3,15 +3,16 @@ from typing import Optional
 
 from ..db import models
 from ..schemas.user import UserCreate, UserUpdate
+from ..core import security
+
 
 class UserService:
-
     @staticmethod
     def create_user(db: Session, user_in: UserCreate) -> models.User:
         user = models.User(
             username=user_in.username,
-            password_hash=user_in.password,
-            # permission_level defaults to REGULAR in the model
+            password_hash=security.get_password_hash(user_in.password),
+            permission_level=user_in.permission_level or "REGULAR",
         )
         db.add(user)
         db.commit()
@@ -27,14 +28,16 @@ class UserService:
         return db.query(models.User).filter(models.User.username == username).first()
 
     @staticmethod
-    def update_user(db: Session, user_id: int, user_in: UserUpdate) -> Optional[models.User]:
+    def update_user(
+        db: Session, user_id: int, user_in: UserUpdate
+    ) -> Optional[models.User]:
         user = UserService.get_user(db, user_id)
         if not user:
             return None
 
         for field, value in user_in.model_dump(exclude_unset=True).items():
             if field == "password":
-                setattr(user, "password_hash", value)
+                setattr(user, "password_hash", security.get_password_hash(value))
             else:
                 setattr(user, field, value)
 

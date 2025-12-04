@@ -7,19 +7,32 @@ from ..utils.availability import is_room_available
 
 
 class BookingService:
-
     @staticmethod
     def create_booking(db: Session, data: BookingCreate) -> models.Booking:
         # Check room availability
         if not is_room_available(db, data.room_id, data.check_in, data.check_out):
             raise ValueError("Room is not available for the selected dates.")
 
+        # Generate booking number if not provided
+        booking_number = data.booking_number
+        if not booking_number:
+            import uuid
+
+            booking_number = f"BK-{uuid.uuid4().hex[:8].upper()}"
+
         booking = models.Booking(
+            booking_number=booking_number,
             room_id=data.room_id,
             guest_id=data.guest_id,
             check_in=data.check_in,
             check_out=data.check_out,
-            status="booked",
+            number_of_guests=data.number_of_guests,
+            number_of_nights=data.number_of_nights,
+            price_per_night=data.price_per_night,
+            total_price=data.total_price,
+            status=data.status or "pending",
+            special_requests=data.special_requests,
+            internal_notes=data.internal_notes,
         )
         db.add(booking)
         db.commit()
@@ -40,15 +53,14 @@ class BookingService:
         if not booking:
             return None
 
-        # If room or dates changed → check availability
-        if (data.room_id and data.room_id != booking.room_id) or \
-           (data.check_in or data.check_out):
+        # If dates changed → check availability
+        if data.check_in or data.check_out:
             if not is_room_available(
                 db,
-                data.room_id or booking.room_id,
+                booking.room_id,
                 data.check_in or booking.check_in,
                 data.check_out or booking.check_out,
-                exclude_booking_id=booking_id
+                exclude_booking_id=booking_id,
             ):
                 raise ValueError("Room is not available for updated dates.")
 

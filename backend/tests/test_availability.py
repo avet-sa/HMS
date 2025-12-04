@@ -3,8 +3,8 @@ from datetime import date
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from backend.app.db import models
-from backend.app.utils.availability import is_room_available
+from app.db import models
+from app.utils.availability import is_room_available
 
 
 @pytest.fixture()
