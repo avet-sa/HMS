@@ -1,10 +1,11 @@
+import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import os
 
 # Import routers
-from .api import rooms, guests, bookings, auth, room_types, users
+from backend.app.api import rooms, guests, bookings, auth, room_types, users
 
 # import logging
 # logging.basicConfig(level=logging.INFO)
@@ -53,3 +54,6 @@ if os.path.exists("frontend"):
 @app.get("/")
 def root():
     return {"message": "Welcome to the Hotel Management System API"}
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)

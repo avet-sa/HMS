@@ -302,7 +302,7 @@ async function createGuest() {
 function renderBookingItem(b) {
   const li = document.createElement("li");
   const text = document.createElement("span");
-  text.innerHTML = `<span class="item-id">#${b.id}</span>Guest ${b.guest_id} → Room ${b.room_id} (${b.check_in})`;
+  text.innerHTML = `<span class="item-id">#${b.id}</span>Guest #${b.guest.id} ${b.guest.name} ${b.guest.surname} → Room ${b.room_id} | ${b.check_in} - ${b.check_out} | ${b.number_of_nights} Nights`;
   li.appendChild(text);
 
   const btnDelete = document.createElement("button");
@@ -330,7 +330,12 @@ async function listBookings() {
     const ul = document.getElementById("booking-list");
     ul.innerHTML = "";
     if (bookings && bookings.length > 0) {
-      bookings.forEach(b => ul.appendChild(renderBookingItem(b)));
+      bookings.forEach(b => {
+          if (b.status !== "cancelled") {
+              ul.appendChild(renderBookingItem(b));
+              console.log("appended")
+          }
+      });
     } else {
       ul.innerHTML = '<li style="text-align: center; color: #7f8c8d;">No bookings yet</li>';
     }

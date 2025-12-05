@@ -14,4 +14,3 @@ def is_room_available(db, room_id: int, check_in: date, check_out: date, exclude
 	if exclude_booking_id:
 		query = query.filter(models.Booking.id != exclude_booking_id)
 	return query.first() is None
-

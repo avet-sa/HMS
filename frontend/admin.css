@@ -4,6 +4,7 @@
     padding: var(--space-xl);
     max-width: 1400px;
     margin: 0 auto;
+    overflow: scroll;
 }
 
 /* Stats Grid */

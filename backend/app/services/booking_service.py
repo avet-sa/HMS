@@ -1,24 +1,34 @@
-from sqlalchemy.orm import Session
+from uuid import uuid4
+
+from sqlalchemy.orm import Session, joinedload
 from datetime import datetime
 
 from ..db import models
-from ..schemas.booking import BookingCreate, BookingUpdate
 from ..utils.availability import is_room_available
+from ..schemas.booking import BookingCreate, BookingUpdate
 
 
 class BookingService:
+    # noinspection PyTypeChecker
     @staticmethod
     def create_booking(db: Session, data: BookingCreate) -> models.Booking:
         # Check room availability
         if not is_room_available(db, data.room_id, data.check_in, data.check_out):
             raise ValueError("Room is not available for the selected dates.")
 
-        # Generate booking number if not provided
-        booking_number = data.booking_number
-        if not booking_number:
-            import uuid
+        room = db.query(models.Room).filter(models.Room.id == data.room_id).first()
+        if not room:
+            raise ValueError("Room not found.")
 
-            booking_number = f"BK-{uuid.uuid4().hex[:8].upper()}"
+        # Freeze price at booking time
+        price_per_night = room.price_per_night
+
+        # Calculate total price
+        nights = (data.check_out - data.check_in).days
+        total_price = nights * price_per_night
+
+        # Generate booking number if not provided
+        booking_number = f"BK-{uuid4().hex[:8].upper()}"
 
         booking = models.Booking(
             booking_number=booking_number,
@@ -27,9 +37,8 @@ class BookingService:
             check_in=data.check_in,
             check_out=data.check_out,
             number_of_guests=data.number_of_guests,
-            number_of_nights=data.number_of_nights,
-            price_per_night=data.price_per_night,
-            total_price=data.total_price,
+            price_per_night=price_per_night,
+            total_price=total_price,
             status=data.status or "pending",
             special_requests=data.special_requests,
             internal_notes=data.internal_notes,
@@ -41,11 +50,20 @@ class BookingService:
 
     @staticmethod
     def get_booking(db: Session, booking_id: int) -> models.Booking | None:
-        return db.query(models.Booking).filter(models.Booking.id == booking_id).first()
+        return (
+            db.query(models.Booking).
+            options(joinedload(models.Booking.guest))
+            .filter(models.Booking.id == booking_id)
+            .first()
+        )
 
     @staticmethod
     def list_bookings(db: Session):
-        return db.query(models.Booking).all()
+        return (
+            db.query(models.Booking)
+            .options(joinedload(models.Booking.guest))
+            .all()
+        )
 
     @staticmethod
     def update_booking(db: Session, booking_id: int, data: BookingUpdate):

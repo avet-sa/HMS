@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, Date, DateTime, ForeignKey, Boolean, Numeric, Enum as SQLEnum
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship, declarative_base
 from sqlalchemy.sql import func
 from enum import Enum
@@ -124,7 +125,7 @@ class Room(Base):
     id = Column(Integer, primary_key=True, index=True)
     number = Column(String(10), unique=True, nullable=False, index=True)
     room_type_id = Column(Integer, ForeignKey("room_types.id"), nullable=False)
-    
+
     price_per_night = Column(Numeric(10, 2), nullable=False)
     square_meters = Column(Integer)
     floor = Column(Integer)
@@ -164,7 +165,10 @@ class Booking(Base):
     check_out = Column(Date, nullable=False, index=True)
     
     number_of_guests = Column(Integer, nullable=False, default=1)
-    number_of_nights = Column(Integer, nullable=False)
+
+    @hybrid_property
+    def number_of_nights(self):
+        return (self.check_out - self.check_in).days
     
     # Pricing
     price_per_night = Column(Numeric(10, 2), nullable=False)  # Lock in price at booking time
@@ -173,8 +177,8 @@ class Booking(Base):
     status = Column(SQLEnum(BookingStatus, name="booking_status", values_callable=lambda x: [e.value for e in x]), default=BookingStatus.PENDING.value, nullable=False, index=True)
     
     # Special requests/notes
-    special_requests = Column(String(500))
-    internal_notes = Column(String(500))
+    special_requests = Column(String(500), nullable=True)
+    internal_notes = Column(String(500), nullable=True)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
