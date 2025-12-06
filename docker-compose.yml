@@ -1,0 +1,129 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:17-bookworm
+    container_name: hms_db
+    environment:
+      POSTGRES_INITDB_ARGS: "-U postgres -c password_encryption=scram-sha-256"
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - hms_network
+
+  # pgAdmin for Database Management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: hms_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - hms_network
+
+  # Backend API with Migrations
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hms_backend
+    environment:
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ALGORITHM: ${JWT_ALGORITHM}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES}
+      FRONTEND_ALLOWED_ORIGINS: ${FRONTEND_ALLOWED_ORIGINS}
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    command: >
+      sh -c "
+      echo 'Running database migrations...' &&
+      alembic upgrade head &&
+      echo 'Starting FastAPI server...' &&
+      uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+      "
+    networks:
+      - hms_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # One-shot importer: optionally stream a dump from the host Postgres into the
+  # containerized DB. This is disabled by default and should be enabled only
+  # when you want to copy data from your host machine into the Compose DB.
+  import_host_db:
+    image: postgres:17-bookworm
+    container_name: hms_import_host_db
+    depends_on:
+      db:
+        condition: service_healthy
+    # Mount the helper script and run it with sh to avoid YAML quoting issues
+    volumes:
+      - ./import_host_db.sh:/import_host_db.sh:ro
+    command: ["/bin/bash", "/import_host_db.sh"]
+    environment:
+      HOST_DB_HOST: ${HOST_DB_HOST:-host.docker.internal}
+      HOST_DB_NAME: ${HOST_DB_NAME}
+      HOST_DB_USER: ${HOST_DB_USER}
+      HOST_DB_PASSWORD: ${HOST_DB_PASSWORD}
+      DB_HOST: db
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      ENABLE_IMPORT_HOST_DB: ${ENABLE_IMPORT_HOST_DB:-false}
+    networks:
+      - hms_network
+    restart: "no"
+
+  # Optional: Frontend service (if needed)
+  # frontend:
+  #   image: node:18-bookworm
+  #   container_name: hms_frontend
+  #   working_dir: /app
+  #   volumes:
+  #     - ./frontend:/app
+  #   ports:
+  #     - "5500:5500"
+  #   command: npx http-server -p 5500 -c-1
+  #   depends_on:
+  #     - backend
+  #   networks:
+  #     - hms_network
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  hms_network:
+    driver: bridge
