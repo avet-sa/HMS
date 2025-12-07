@@ -1,7 +1,7 @@
 from datetime import date, timedelta
 
 
-def test_full_booking_flow(client):
+def test_full_booking_flow(client, admin_headers):
     # 1. Create Room Type
     room_type_data = {
         "name": "Deluxe Suite",
@@ -26,7 +26,7 @@ def test_full_booking_flow(client):
         "has_view": True,
         "is_smoking": False,
     }
-    response = client.post("/rooms/", json=room_data)
+    response = client.post("/rooms/", json=room_data, headers=admin_headers)
     assert response.status_code == 200, response.text
     room = response.json()
     assert room["number"] == room_data["number"]
@@ -42,7 +42,7 @@ def test_full_booking_flow(client):
         "document_type": "passport",
         "document_id": "A12345678",
     }
-    response = client.post("/guests/", json=guest_data)
+    response = client.post("/guests/", json=guest_data, headers=admin_headers)
     assert response.status_code == 200, response.text
     guest = response.json()
     assert guest["email"] == guest_data["email"]
@@ -57,14 +57,14 @@ def test_full_booking_flow(client):
         "check_in": check_in.isoformat(),
         "check_out": check_out.isoformat(),
         "number_of_guests": 2,
-        "number_of_nights": 2,
         "price_per_night": 200.0,
         "total_price": 400.0,
         "status": "pending",
     }
-    response = client.post("/bookings/", json=booking_data)
+    response = client.post("/bookings/", json=booking_data, headers=admin_headers)
     assert response.status_code == 200, response.text
     booking = response.json()
     assert booking["guest"]["id"] == guest_id
     assert booking["room_id"] == room_id
     assert float(booking["total_price"]) == 400.0
+

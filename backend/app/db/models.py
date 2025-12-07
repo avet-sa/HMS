@@ -160,6 +160,7 @@ class Booking(Base):
     
     guest_id = Column(Integer, ForeignKey("guests.id", ondelete="CASCADE"), nullable=False, index=True)
     room_id = Column(Integer, ForeignKey("rooms.id", ondelete="CASCADE"), nullable=False, index=True)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)  # User who created booking
     
     check_in = Column(Date, nullable=False, index=True)
     check_out = Column(Date, nullable=False, index=True)
@@ -176,6 +177,12 @@ class Booking(Base):
     
     status = Column(SQLEnum(BookingStatus, name="booking_status", values_callable=lambda x: [e.value for e in x]), default=BookingStatus.PENDING.value, nullable=False, index=True)
     
+    # Actual check-in/check-out timestamps
+    actual_check_in = Column(DateTime(timezone=True), nullable=True)
+    actual_check_out = Column(DateTime(timezone=True), nullable=True)
+    cancelled_at = Column(DateTime(timezone=True), nullable=True)
+    final_bill = Column(Numeric(10, 2), nullable=True)
+    
     # Special requests/notes
     special_requests = Column(String(500), nullable=True)
     internal_notes = Column(String(500), nullable=True)
@@ -187,6 +194,7 @@ class Booking(Base):
     guest = relationship("Guest", back_populates="bookings")
     room = relationship("Room", back_populates="bookings")
     payments = relationship("Payment", back_populates="booking")
+    created_by_user = relationship("User", foreign_keys=[created_by])
 
 
 # -----------------------------

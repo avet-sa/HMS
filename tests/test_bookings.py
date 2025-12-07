@@ -3,7 +3,7 @@ import pytest
 
 
 @pytest.fixture
-def room_type(client):
+def room_type(client, admin_headers):
     response = client.post(
         "/room-types/",
         json={"name": "Booking Test Room Type", "base_price": 150.0, "capacity": 2},
@@ -12,7 +12,7 @@ def room_type(client):
 
 
 @pytest.fixture
-def room(client, room_type):
+def room(client, admin_headers, room_type):
     response = client.post(
         "/rooms/",
         json={
@@ -22,20 +22,22 @@ def room(client, room_type):
             "square_meters": 30,
             "floor": 2,
         },
+        headers=admin_headers,
     )
     return response.json()
 
 
 @pytest.fixture
-def guest(client):
+def guest(client, admin_headers):
     response = client.post(
         "/guests/",
         json={"name": "Test", "surname": "Guest", "email": "test.guest@example.com"},
+        headers=admin_headers,
     )
     return response.json()
 
 
-def test_create_booking(client, room, guest):
+def test_create_booking(client, admin_headers, room, guest):
     check_in = date.today() + timedelta(days=1)
     check_out = date.today() + timedelta(days=3)
     data = {
@@ -44,18 +46,17 @@ def test_create_booking(client, room, guest):
         "check_in": check_in.isoformat(),
         "check_out": check_out.isoformat(),
         "number_of_guests": 2,
-        "number_of_nights": 2,
         "price_per_night": 150.0,
         "total_price": 300.0,
     }
-    response = client.post("/bookings/", json=data)
+    response = client.post("/bookings/", json=data, headers=admin_headers)
     assert response.status_code == 200
     content = response.json()
     assert content["guest"]["id"] == guest["id"]
     assert content["room_id"] == room["id"]
 
 
-def test_list_bookings(client, room, guest):
+def test_list_bookings(client, admin_headers, room, guest):
     check_in = date.today() + timedelta(days=1)
     check_out = date.today() + timedelta(days=2)
     client.post(
@@ -67,13 +68,14 @@ def test_list_bookings(client, room, guest):
             "check_out": check_out.isoformat(),
             "number_of_guests": 1,
         },
+        headers=admin_headers,
     )
-    response = client.get("/bookings/")
+    response = client.get("/bookings/", headers=admin_headers)
     assert response.status_code == 200
     assert len(response.json()) >= 1
 
 
-def test_get_booking(client, room, guest):
+def test_get_booking(client, admin_headers, room, guest):
     check_in = date.today() + timedelta(days=1)
     check_out = date.today() + timedelta(days=2)
     create_resp = client.post(
@@ -84,19 +86,19 @@ def test_get_booking(client, room, guest):
             "check_in": check_in.isoformat(),
             "check_out": check_out.isoformat(),
             "number_of_guests": 1,
-            "number_of_nights": 1,
             "price_per_night": 150.0,
             "total_price": 150.0,
         },
+        headers=admin_headers,
     )
     booking_id = create_resp.json()["id"]
 
-    response = client.get(f"/bookings/{booking_id}")
+    response = client.get(f"/bookings/{booking_id}", headers=admin_headers)
     assert response.status_code == 200
     assert response.json()["id"] == booking_id
 
 
-def test_update_booking(client, room, guest):
+def test_update_booking(client, admin_headers, room, guest):
     check_in = date.today() + timedelta(days=1)
     check_out = date.today() + timedelta(days=2)
     create_resp = client.post(
@@ -107,19 +109,19 @@ def test_update_booking(client, room, guest):
             "check_in": check_in.isoformat(),
             "check_out": check_out.isoformat(),
             "number_of_guests": 1,
-            "number_of_nights": 1,
             "price_per_night": 150.0,
             "total_price": 150.0,
         },
+        headers=admin_headers,
     )
     booking_id = create_resp.json()["id"]
 
-    response = client.put(f"/bookings/{booking_id}", json={"number_of_guests": 2})
+    response = client.put(f"/bookings/{booking_id}", json={"number_of_guests": 2}, headers=admin_headers)
     assert response.status_code == 200
     assert response.json()["number_of_guests"] == 2
 
 
-def test_checkin_booking(client, room, guest):
+def test_checkin_booking(client, admin_headers, room, guest):
     check_in = date.today() + timedelta(days=1)
     check_out = date.today() + timedelta(days=2)
     create_resp = client.post(
@@ -130,19 +132,25 @@ def test_checkin_booking(client, room, guest):
             "check_in": check_in.isoformat(),
             "check_out": check_out.isoformat(),
             "number_of_guests": 1,
-            "number_of_nights": 1,
             "price_per_night": 150.0,
             "total_price": 150.0,
         },
+        headers=admin_headers,
     )
     booking_id = create_resp.json()["id"]
 
-    response = client.post(f"/bookings/{booking_id}/checkin")
+    # First confirm the booking
+    confirm_resp = client.post(f"/bookings/{booking_id}/confirm", headers=admin_headers)
+    assert confirm_resp.status_code == 200
+    assert confirm_resp.json()["status"] == "confirmed"
+
+    # Then check in
+    response = client.post(f"/bookings/{booking_id}/check-in", headers=admin_headers)
     assert response.status_code == 200
     assert response.json()["status"] == "checked_in"
 
 
-def test_checkout_booking(client, room, guest):
+def test_checkout_booking(client, admin_headers, room, guest):
     check_in = date.today() + timedelta(days=1)
     check_out = date.today() + timedelta(days=2)
     create_resp = client.post(
@@ -153,19 +161,26 @@ def test_checkout_booking(client, room, guest):
             "check_in": check_in.isoformat(),
             "check_out": check_out.isoformat(),
             "number_of_guests": 1,
-            "number_of_nights": 1,
             "price_per_night": 150.0,
             "total_price": 150.0,
         },
+        headers=admin_headers,
     )
     booking_id = create_resp.json()["id"]
 
-    response = client.post(f"/bookings/{booking_id}/checkout")
+    # Confirm
+    client.post(f"/bookings/{booking_id}/confirm", headers=admin_headers)
+
+    # Check in
+    client.post(f"/bookings/{booking_id}/check-in", headers=admin_headers)
+
+    # Check out
+    response = client.post(f"/bookings/{booking_id}/check-out", headers=admin_headers)
     assert response.status_code == 200
     assert response.json()["status"] == "checked_out"
 
 
-def test_cancel_booking(client, room, guest):
+def test_cancel_booking(client, admin_headers, room, guest):
     check_in = date.today() + timedelta(days=1)
     check_out = date.today() + timedelta(days=2)
     create_resp = client.post(
@@ -176,13 +191,13 @@ def test_cancel_booking(client, room, guest):
             "check_in": check_in.isoformat(),
             "check_out": check_out.isoformat(),
             "number_of_guests": 1,
-            "number_of_nights": 1,
             "price_per_night": 150.0,
             "total_price": 150.0,
         },
+        headers=admin_headers,
     )
     booking_id = create_resp.json()["id"]
 
-    response = client.post(f"/bookings/{booking_id}/cancel")
+    response = client.post(f"/bookings/{booking_id}/cancel", headers=admin_headers)
     assert response.status_code == 200
     assert response.json()["status"] == "cancelled"

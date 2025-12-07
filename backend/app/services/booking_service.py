@@ -2,6 +2,7 @@ from uuid import uuid4
 
 from sqlalchemy.orm import Session, joinedload
 from datetime import datetime
+from fastapi import HTTPException
 
 from ..db import models
 from ..utils.availability import is_room_available
@@ -9,9 +10,28 @@ from ..schemas.booking import BookingCreate, BookingUpdate
 
 
 class BookingService:
+    # Valid state transitions
+    VALID_TRANSITIONS = {
+        models.BookingStatus.PENDING: [models.BookingStatus.CONFIRMED, models.BookingStatus.CANCELLED],
+        models.BookingStatus.CONFIRMED: [models.BookingStatus.CHECKED_IN, models.BookingStatus.CANCELLED, models.BookingStatus.NO_SHOW],
+        models.BookingStatus.CHECKED_IN: [models.BookingStatus.CHECKED_OUT],
+        models.BookingStatus.CHECKED_OUT: [],
+        models.BookingStatus.CANCELLED: [],
+        models.BookingStatus.NO_SHOW: [],
+    }
+
+    @staticmethod
+    def _validate_transition(from_status: models.BookingStatus, to_status: models.BookingStatus):
+        """Validate if transition is allowed."""
+        if to_status not in BookingService.VALID_TRANSITIONS.get(from_status, []):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid transition from {from_status.value} to {to_status.value}"
+            )
+
     # noinspection PyTypeChecker
     @staticmethod
-    def create_booking(db: Session, data: BookingCreate) -> models.Booking:
+    def create_booking(db: Session, data: BookingCreate, created_by_user_id: int = None) -> models.Booking:
         # Check room availability
         if not is_room_available(db, data.room_id, data.check_in, data.check_out):
             raise ValueError("Room is not available for the selected dates.")
@@ -34,12 +54,13 @@ class BookingService:
             booking_number=booking_number,
             room_id=data.room_id,
             guest_id=data.guest_id,
+            created_by=created_by_user_id,
             check_in=data.check_in,
             check_out=data.check_out,
             number_of_guests=data.number_of_guests,
             price_per_night=price_per_night,
             total_price=total_price,
-            status=data.status or "pending",
+            status=models.BookingStatus.PENDING.value,
             special_requests=data.special_requests,
             internal_notes=data.internal_notes,
         )
@@ -58,12 +79,19 @@ class BookingService:
         )
 
     @staticmethod
-    def list_bookings(db: Session):
-        return (
-            db.query(models.Booking)
-            .options(joinedload(models.Booking.guest))
-            .all()
-        )
+    def list_bookings(db: Session, current_user: models.User = None):
+        """
+        List bookings with role-based filtering:
+        - ADMIN, MANAGER: see all bookings
+        - REGULAR: see only own bookings (created_by == user.id)
+        """
+        query = db.query(models.Booking).options(joinedload(models.Booking.guest))
+        
+        # Filter by role
+        if current_user and current_user.permission_level == models.PermissionLevel.REGULAR:
+            query = query.filter(models.Booking.created_by == current_user.id)
+        
+        return query.all()
 
     @staticmethod
     def update_booking(db: Session, booking_id: int, data: BookingUpdate):
@@ -90,36 +118,85 @@ class BookingService:
         return booking
 
     @staticmethod
-    def cancel_booking(db: Session, booking_id: int):
+    def confirm_booking(db: Session, booking_id: int):
+        """Transition from PENDING to CONFIRMED."""
         booking = BookingService.get_booking(db, booking_id)
         if not booking:
             return None
-        booking.status = "cancelled"
+        
+        current_status = models.BookingStatus(booking.status)
+        BookingService._validate_transition(current_status, models.BookingStatus.CONFIRMED)
+        
+        booking.status = models.BookingStatus.CONFIRMED.value
         db.commit()
+        db.refresh(booking)
         return booking
 
     @staticmethod
-    def check_in(db: Session, booking_id: int):
+    def check_in_booking(db: Session, booking_id: int):
+        """Transition from CONFIRMED to CHECKED_IN."""
         booking = BookingService.get_booking(db, booking_id)
         if not booking:
             return None
-        booking.status = "checked_in"
+        
+        current_status = models.BookingStatus(booking.status)
+        BookingService._validate_transition(current_status, models.BookingStatus.CHECKED_IN)
+        
+        booking.status = models.BookingStatus.CHECKED_IN.value
         booking.actual_check_in = datetime.now()
         db.commit()
+        db.refresh(booking)
         return booking
 
     @staticmethod
-    def check_out(db: Session, booking_id: int):
+    def check_out_booking(db: Session, booking_id: int):
+        """Transition from CHECKED_IN to CHECKED_OUT."""
         booking = BookingService.get_booking(db, booking_id)
         if not booking:
             return None
-        booking.status = "checked_out"
+        
+        current_status = models.BookingStatus(booking.status)
+        BookingService._validate_transition(current_status, models.BookingStatus.CHECKED_OUT)
+        
+        booking.status = models.BookingStatus.CHECKED_OUT.value
         booking.actual_check_out = datetime.now()
-
-        # Free room
-        room = db.query(models.Room).filter(models.Room.id == booking.room_id).first()
-        if room:
-            room.is_available = True
-
+        
+        # Calculate final bill based on actual nights
+        if booking.actual_check_in:
+            actual_nights = (booking.actual_check_out - booking.actual_check_in).days
+            booking.final_bill = actual_nights * booking.price_per_night
+        
         db.commit()
+        db.refresh(booking)
+        return booking
+
+    @staticmethod
+    def cancel_booking(db: Session, booking_id: int):
+        """Transition from PENDING/CONFIRMED to CANCELLED."""
+        booking = BookingService.get_booking(db, booking_id)
+        if not booking:
+            return None
+        
+        current_status = models.BookingStatus(booking.status)
+        BookingService._validate_transition(current_status, models.BookingStatus.CANCELLED)
+        
+        booking.status = models.BookingStatus.CANCELLED.value
+        booking.cancelled_at = datetime.now()
+        db.commit()
+        db.refresh(booking)
+        return booking
+
+    @staticmethod
+    def mark_no_show(db: Session, booking_id: int):
+        """Transition from CONFIRMED to NO_SHOW."""
+        booking = BookingService.get_booking(db, booking_id)
+        if not booking:
+            return None
+        
+        current_status = models.BookingStatus(booking.status)
+        BookingService._validate_transition(current_status, models.BookingStatus.NO_SHOW)
+        
+        booking.status = models.BookingStatus.NO_SHOW.value
+        db.commit()
+        db.refresh(booking)
         return booking

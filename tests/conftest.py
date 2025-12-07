@@ -9,7 +9,8 @@ sys.path.append(".")
 
 from backend.app.main import app
 from backend.app.db.session import get_db
-from backend.app.db.models import Base
+from backend.app.db import models
+from backend.app.core.security import create_access_token
 
 # Use an in-memory SQLite database for tests
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
@@ -25,7 +26,7 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 @pytest.fixture(scope="function")
 def db():
     # Create the database tables
-    Base.metadata.create_all(bind=engine)
+    models.Base.metadata.create_all(bind=engine)
 
     db = TestingSessionLocal()
     try:
@@ -33,7 +34,7 @@ def db():
     finally:
         db.close()
         # Drop the tables after the test
-        Base.metadata.drop_all(bind=engine)
+        models.Base.metadata.drop_all(bind=engine)
 
 
 @pytest.fixture(scope="function")
@@ -48,3 +49,67 @@ def client(db):
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(scope="function")
+def admin_user(db):
+    """Create an admin user for testing."""
+    from backend.app.services.user_service import UserService
+    from backend.app.schemas.user import UserCreate
+    
+    user_data = UserCreate(username="admin", password="adminpass123")
+    user = UserService.create_user(db, user_data)
+    user.permission_level = models.PermissionLevel.ADMIN
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@pytest.fixture(scope="function")
+def manager_user(db):
+    """Create a manager user for testing."""
+    from backend.app.services.user_service import UserService
+    from backend.app.schemas.user import UserCreate
+    
+    user_data = UserCreate(username="manager", password="managerpass123")
+    user = UserService.create_user(db, user_data)
+    user.permission_level = models.PermissionLevel.MANAGER
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@pytest.fixture(scope="function")
+def regular_user(db):
+    """Create a regular user for testing."""
+    from backend.app.services.user_service import UserService
+    from backend.app.schemas.user import UserCreate
+    
+    user_data = UserCreate(username="regular", password="regularpass123")
+    user = UserService.create_user(db, user_data)
+    user.permission_level = models.PermissionLevel.REGULAR
+    db.commit()
+    db.refresh(user)
+    return user
+
+
+@pytest.fixture(scope="function")
+def admin_headers(admin_user):
+    """Get auth headers for admin user."""
+    token = create_access_token(subject=admin_user.username)
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture(scope="function")
+def manager_headers(manager_user):
+    """Get auth headers for manager user."""
+    token = create_access_token(subject=manager_user.username)
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture(scope="function")
+def regular_headers(regular_user):
+    """Get auth headers for regular user."""
+    token = create_access_token(subject=regular_user.username)
+    return {"Authorization": f"Bearer {token}"}
+
