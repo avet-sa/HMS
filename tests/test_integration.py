@@ -65,6 +65,6 @@ def test_full_booking_flow(client):
     response = client.post("/bookings/", json=booking_data)
     assert response.status_code == 200, response.text
     booking = response.json()
-    assert booking["guest_id"] == guest_id
+    assert booking["guest"]["id"] == guest_id
     assert booking["room_id"] == room_id
     assert float(booking["total_price"]) == 400.0

@@ -51,7 +51,7 @@ def test_create_booking(client, room, guest):
     response = client.post("/bookings/", json=data)
     assert response.status_code == 200
     content = response.json()
-    assert content["guest_id"] == guest["id"]
+    assert content["guest"]["id"] == guest["id"]
     assert content["room_id"] == room["id"]
 
 
@@ -66,9 +66,6 @@ def test_list_bookings(client, room, guest):
             "check_in": check_in.isoformat(),
             "check_out": check_out.isoformat(),
             "number_of_guests": 1,
-            "number_of_nights": 1,
-            "price_per_night": 150.0,
-            "total_price": 150.0,
         },
     )
     response = client.get("/bookings/")

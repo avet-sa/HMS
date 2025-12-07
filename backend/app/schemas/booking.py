@@ -23,9 +23,7 @@ class GuestBasic(BaseModel):
     id: int
     name: str
     surname: str
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)
 
 class BookingUpdate(BaseModel):
     check_in: Optional[date] = None
@@ -49,7 +47,7 @@ class BookingUpdate(BaseModel):
 class BookingResponse(BaseModel):
     id: int
     booking_number: str
-    guest: GuestBasic          # ← instead of guest_id
+    guest: GuestBasic       # ← instead of guest_id
     room_id: int
     check_in: date
     check_out: date
@@ -62,6 +60,4 @@ class BookingResponse(BaseModel):
     internal_notes: str | None
     created_at: datetime
     updated_at: datetime | None
-
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

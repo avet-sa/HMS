@@ -34,7 +34,6 @@ def make_booking(session, room_id, check_in, check_out, status="confirmed", book
         check_in=check_in,
         check_out=check_out,
         number_of_guests=1,
-        number_of_nights=(check_out - check_in).days,
         price_per_night=100,
         total_price=100 * (check_out - check_in).days,
         status=status,
