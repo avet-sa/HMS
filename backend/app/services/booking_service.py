@@ -161,9 +161,13 @@ class BookingService:
         booking.status = models.BookingStatus.CHECKED_OUT.value
         booking.actual_check_out = datetime.now()
         
-        # Calculate final bill based on actual nights
+        # Calculate final bill based on actual nights; fallback to original booking nights
         if booking.actual_check_in:
             actual_nights = (booking.actual_check_out - booking.actual_check_in).days
+            if actual_nights <= 0:
+                # If actual timestamps are on the same day (tests or quick check-outs),
+                # fall back to the originally booked nights to avoid a zero final bill.
+                actual_nights = (booking.check_out - booking.check_in).days
             booking.final_bill = actual_nights * booking.price_per_night
         
         db.commit()

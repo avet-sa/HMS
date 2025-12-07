@@ -202,20 +202,42 @@ class Booking(Base):
 # -----------------------------
 class Payment(Base):
     __tablename__ = "payments"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     booking_id = Column(Integer, ForeignKey("bookings.id", ondelete="CASCADE"), nullable=False, index=True)
-    
+
     amount = Column(Numeric(10, 2), nullable=False)
-    payment_method = Column(SQLEnum(PaymentMethod, name="payment_method", values_callable=lambda x: [e.value for e in x]), nullable=False)
-    payment_status = Column(SQLEnum(PaymentStatus, name="payment_status", values_callable=lambda x: [e.value for e in x]), default=PaymentStatus.PENDING.value, nullable=False)
-    
-    transaction_id = Column(String(100))  # External payment processor reference
-    payment_date = Column(DateTime(timezone=True))
-    
-    notes = Column(String(255))
-    
+    currency = Column(String(10), nullable=False, server_default="USD")
+    method = Column(String(50), nullable=False)
+
+    class PaymentStatus(Enum):
+        PENDING = "PENDING"
+        PAID = "PAID"
+        FAILED = "FAILED"
+        REFUNDED = "REFUNDED"
+
+    status = Column(SQLEnum(PaymentStatus, name="payment_status", values_callable=lambda x: [e.value for e in x]), default=PaymentStatus.PENDING.value, nullable=False)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
-    
+    processed_at = Column(DateTime(timezone=True), nullable=True)
+    refunded_at = Column(DateTime(timezone=True), nullable=True)
+
+    reference = Column(String(100), nullable=True)
+
     booking = relationship("Booking", back_populates="payments")
+
+
+class Invoice(Base):
+    __tablename__ = "invoices"
+
+    id = Column(Integer, primary_key=True, index=True)
+    booking_id = Column(Integer, ForeignKey("bookings.id", ondelete="CASCADE"), nullable=False, index=True)
+    invoice_number = Column(String(50), unique=True, nullable=False, index=True)
+
+    subtotal = Column(Numeric(10, 2), nullable=False)
+    tax = Column(Numeric(10, 2), nullable=False)
+    total = Column(Numeric(10, 2), nullable=False)
+
+    issued_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    booking = relationship("Booking")
