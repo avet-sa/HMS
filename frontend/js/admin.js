@@ -127,7 +127,7 @@ function renderUsersTable(users) {
         tr.innerHTML = `
       <td class="user-id">#${user.id}</td>
       <td><strong>${user.username}</strong></td>
-      <td><span class="permission-badge ${user.permission_level.toLowerCase()}">${user.permission_level}</span></td>
+      <td id="perm-${user.id}"><span class="permission-badge ${user.permission_level.toLowerCase()}">${user.permission_level}</span></td>
       <td><span class="status-badge ${user.is_active ? 'active' : 'inactive'}">${user.is_active ? 'Active' : 'Inactive'}</span></td>
       <td>${new Date(user.created_at).toLocaleDateString()}</td>
       <td class="action-buttons"></td>
@@ -135,13 +135,23 @@ function renderUsersTable(users) {
 
         const actionsCell = tr.querySelector(".action-buttons");
 
-        // Toggle Permission Button
+        // Permission Dropdown (if not current user)
         if (user.id !== currentUser.id) {
-            const btnTogglePerm = document.createElement("button");
-            btnTogglePerm.className = "btn btn-secondary btn-icon";
-            btnTogglePerm.textContent = user.permission_level === "ADMIN" ? "↓ Regular" : "↑ Admin";
-            btnTogglePerm.addEventListener("click", () => togglePermission(user.id, user.permission_level));
-            actionsCell.appendChild(btnTogglePerm);
+            const permDropdown = document.createElement("select");
+            permDropdown.className = "permission-select";
+            permDropdown.innerHTML = `
+                <option value="REGULAR" ${user.permission_level === "REGULAR" ? "selected" : ""}>Regular</option>
+                <option value="MANAGER" ${user.permission_level === "MANAGER" ? "selected" : ""}>Manager</option>
+                <option value="ADMIN" ${user.permission_level === "ADMIN" ? "selected" : ""}>Admin</option>
+            `;
+            permDropdown.addEventListener("change", (e) => {
+                if (e.target.value !== user.permission_level) {
+                    changePermissionDirect(user.id, user.permission_level, e.target.value);
+                }
+            });
+            const permCell = tr.querySelector(`#perm-${user.id}`);
+            permCell.innerHTML = "";
+            permCell.appendChild(permDropdown);
         }
 
         // Deactivate Button
@@ -161,10 +171,11 @@ function renderUsersTable(users) {
 function updateStats(users) {
     const totalUsers = users.length;
     const adminUsers = users.filter(u => u.permission_level === "ADMIN").length;
+    const managerUsers = users.filter(u => u.permission_level === "MANAGER").length;
     const activeUsers = users.filter(u => u.is_active).length;
 
     document.getElementById("total-users").textContent = totalUsers;
-    document.getElementById("admin-users").textContent = adminUsers;
+    document.getElementById("admin-users").textContent = `${adminUsers} + ${managerUsers} managers`;
     document.getElementById("active-users").textContent = activeUsers;
 }
 
@@ -198,8 +209,29 @@ async function createUser() {
     }
 }
 
-async function togglePermission(userId, currentPermission) {
-    const newPermission = currentPermission === "ADMIN" ? "REGULAR" : "ADMIN";
+async function changePermissionDirect(userId, currentPermission, newPermission) {
+    if (!confirm(`Change permission to ${newPermission}?`)) return;
+
+    showMessage("users-message", "Updating permission...");
+    try {
+        await apiFetch(`/users/${userId}`, {
+            method: "PATCH",
+            body: JSON.stringify({ permission_level: newPermission })
+        });
+
+        await loadUsers();
+        showMessage("users-message", "Permission updated successfully");
+    } catch (e) {
+        showMessage("users-message", `Failed to update permission: ${e.message}`, true);
+    }
+}
+
+async function changePermission(userId, currentPermission) {
+    // Cycle through: REGULAR -> MANAGER -> ADMIN -> REGULAR
+    let newPermission = "MANAGER";
+    if (currentPermission === "REGULAR") newPermission = "MANAGER";
+    else if (currentPermission === "MANAGER") newPermission = "ADMIN";
+    else if (currentPermission === "ADMIN") newPermission = "REGULAR";
 
     if (!confirm(`Change permission to ${newPermission}?`)) return;
 

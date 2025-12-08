@@ -80,6 +80,7 @@
 .users-table {
     width: 100%;
     border-collapse: collapse;
+    text-align: center;
 }
 
 .users-table thead {
@@ -88,7 +89,7 @@
 
 .users-table th {
     padding: var(--space-md);
-    text-align: left;
+    text-align: center;
     font-weight: 600;
     font-size: 0.875rem;
     color: var(--text-secondary);
@@ -135,6 +136,32 @@
 .permission-badge.regular {
     background: rgba(59, 130, 246, 0.15);
     color: var(--accent);
+}
+
+.permission-badge.manager {
+    background: rgba(234, 179, 8, 0.15);
+    color: #eab308;
+}
+
+.permission-select {
+    padding: 0.375rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-secondary);
+    color: var(--text);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: border-color 0.2s ease;
+}
+
+.permission-select:hover {
+    border-color: var(--accent);
+}
+
+.permission-select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .status-badge {
