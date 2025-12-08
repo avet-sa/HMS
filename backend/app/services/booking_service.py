@@ -7,6 +7,7 @@ from fastapi import HTTPException
 from ..db import models
 from ..utils.availability import is_room_available
 from ..schemas.booking import BookingCreate, BookingUpdate
+from .refund_policy import RefundPolicyService
 
 
 class BookingService:
@@ -176,7 +177,7 @@ class BookingService:
 
     @staticmethod
     def cancel_booking(db: Session, booking_id: int):
-        """Transition from PENDING/CONFIRMED to CANCELLED."""
+        """Transition from PENDING/CONFIRMED to CANCELLED and auto-process refunds."""
         booking = BookingService.get_booking(db, booking_id)
         if not booking:
             return None
@@ -188,11 +189,15 @@ class BookingService:
         booking.cancelled_at = datetime.now()
         db.commit()
         db.refresh(booking)
+        
+        # Auto-process refunds based on cancellation policy
+        RefundPolicyService.process_cancellation_refunds(db, booking)
+        
         return booking
 
     @staticmethod
     def mark_no_show(db: Session, booking_id: int):
-        """Transition from CONFIRMED to NO_SHOW."""
+        """Transition from CONFIRMED to NO_SHOW and charge no-show fee (full bill)."""
         booking = BookingService.get_booking(db, booking_id)
         if not booking:
             return None
@@ -203,4 +208,22 @@ class BookingService:
         booking.status = models.BookingStatus.NO_SHOW.value
         db.commit()
         db.refresh(booking)
+        
+        # Auto-charge full final bill for no-show
+        # Set final_bill if not already set (use total_price as fallback)
+        final_bill = booking.final_bill or booking.total_price
+        
+        if final_bill and final_bill > 0:
+            no_show_charge = models.Payment(
+                booking_id=booking.id,
+                amount=final_bill,
+                currency="USD",
+                method="no_show_charge",
+                status=models.Payment.PaymentStatus.PAID.value,
+                processed_at=datetime.now(),
+                reference=f"No-show charge for booking {booking.booking_number}",
+            )
+            db.add(no_show_charge)
+            db.commit()
+        
         return booking

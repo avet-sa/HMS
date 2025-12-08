@@ -1,4 +1,4 @@
-backend/alembic/migrations/versions/006_cancellation_policies.py"""Add cancellation policies table
+"""Add cancellation policies table.
 
 Revision ID: 006_cancellation_policies
 Revises: 005_payments_invoices
