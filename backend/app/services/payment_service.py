@@ -70,6 +70,15 @@ class PaymentService:
         payment.processed_at = datetime.now()
         db.commit()
         db.refresh(payment)
+        
+        # Auto-generate invoice if not already generated
+        from .invoice_service import InvoiceService
+        existing_invoice = db.query(models.Invoice).filter(
+            models.Invoice.booking_id == booking.id
+        ).first()
+        if not existing_invoice:
+            InvoiceService.generate_invoice(db, booking.id)
+        
         return payment
 
     @staticmethod

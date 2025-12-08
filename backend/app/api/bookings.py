@@ -123,6 +123,15 @@ def cancel_booking(
     current_user: models.User = Depends(get_current_user)
 ):
     try:
+        booking = BookingService.get_booking(db, booking_id)
+        if not booking:
+            raise HTTPException(status_code=404, detail="Booking not found")
+        
+        # RBAC: REGULAR users can only cancel their own bookings
+        if current_user.permission_level == models.PermissionLevel.REGULAR:
+            if booking.created_by != current_user.id:
+                raise HTTPException(status_code=403, detail="You can only cancel your own bookings")
+        
         booking = BookingService.cancel_booking(db, booking_id)
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
