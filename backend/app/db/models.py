@@ -241,3 +241,28 @@ class Invoice(Base):
     issued_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     booking = relationship("Booking")
+
+
+# -----------------------------
+# Cancellation Policy
+# -----------------------------
+class CancellationPolicy(Base):
+    """Define refund percentages based on days before check-in."""
+    __tablename__ = "cancellation_policies"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False, unique=True)  # e.g., "Standard", "Flexible", "Non-Refundable"
+    
+    # Refund tiers: days_before_checkin -> refund_percentage
+    # Example: full_refund_days=7 means 100% refund if cancelled 7+ days before check-in
+    full_refund_days = Column(Integer, default=7, nullable=False)  # Days before check-in for 100% refund
+    partial_refund_days = Column(Integer, default=2, nullable=False)  # Days before check-in for 50% refund
+    partial_refund_percentage = Column(Numeric(5, 2), default=50, nullable=False)  # Refund % if within partial_refund_days
+    # If cancelled within partial_refund_days, no refund
+    
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    def __repr__(self):
+        return f"<CancellationPolicy {self.name}>"
