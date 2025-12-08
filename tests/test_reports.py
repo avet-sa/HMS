@@ -63,7 +63,7 @@ def test_occupancy_report(db, client, admin_headers):
     # booking 2 occupies room2 for start+1..start+3
     b2 = make_booking(db, g2, room2, start + timedelta(days=1), start + timedelta(days=3))
 
-    resp = client.get(f"/reports/occupancy?start_date={start.isoformat()}&end_date={end.isoformat()}", headers=admin_headers)
+    resp = client.get(f"/occupancy?start_date={start.isoformat()}&end_date={end.isoformat()}", headers=admin_headers)
     assert resp.status_code == 200, resp.text
     data = resp.json()
     assert data['start_date'] == start.isoformat()
@@ -101,7 +101,7 @@ def test_revenue_report_and_invoice_flow(db, client, admin_headers):
 
     start = date.today() - timedelta(days=5)
     end = date.today()
-    resp = client.get(f"/reports/revenue?start_date={start.isoformat()}&end_date={end.isoformat()}", headers=admin_headers)
+    resp = client.get(f"/revenue?start_date={start.isoformat()}&end_date={end.isoformat()}", headers=admin_headers)
     assert resp.status_code == 200, resp.text
     data = resp.json()
     assert data['total_revenue'] == '240.00' or float(data['total_revenue']) == 240.0
@@ -132,7 +132,7 @@ def test_trends_report(db, client, admin_headers):
     b2.status = models.BookingStatus.NO_SHOW.value
     db.commit()
 
-    resp = client.get(f"/reports/trends?start_date={start.isoformat()}&end_date={end.isoformat()}", headers=admin_headers)
+    resp = client.get(f"/trends?start_date={start.isoformat()}&end_date={end.isoformat()}", headers=admin_headers)
     assert resp.status_code == 200, resp.text
     data = resp.json()
     assert data['total_bookings'] >= 3

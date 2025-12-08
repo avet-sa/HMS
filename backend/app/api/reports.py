@@ -8,7 +8,7 @@ from ..db import models
 from ..services.report_service import ReportService
 from ..schemas.report import OccupancyReport, RevenueReport, TrendsReport
 
-router = APIRouter(prefix="/reports")
+router = APIRouter()
 
 
 @router.get("/occupancy", response_model=OccupancyReport)
