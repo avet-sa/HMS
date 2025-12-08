@@ -122,7 +122,7 @@ async function login() {
     hideAuthModal();
     showMessage("auth-message", "");
     // Load data
-    setTimeout(() => { listRooms(); listGuests(); listBookings(); }, 200);
+    setTimeout(() => { listRooms(); listGuests(); listBookings(); listRoomTypes(); listPayments(); }, 200);
   } catch (e) {
     showMessage("auth-message", `Sign in failed: ${e.message}`, true);
   }
@@ -207,6 +207,24 @@ async function listRooms() {
   }
 }
 
+// Room Types
+async function listRoomTypes() {
+  try {
+    const types = await apiFetch('/room-types/');
+    const sel = document.getElementById('room-type');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Select Type</option>';
+    types.forEach(t => {
+      const opt = document.createElement('option');
+      opt.value = t.id;
+      opt.textContent = `${t.name} — $${t.base_price}`;
+      sel.appendChild(opt);
+    });
+  } catch (e) {
+    showMessage('rooms-message', `Failed to load room types: ${e.message}`, true);
+  }
+}
+
 async function createRoom() {
   const number = document.getElementById("room-number").value.trim();
   const room_type_id = parseInt(document.getElementById("room-type").value);
@@ -230,6 +248,86 @@ async function createRoom() {
     showMessage("rooms-message", "Room added successfully");
   } catch (e) {
     showMessage("rooms-message", `Failed to add room: ${e.message}`, true);
+  }
+}
+
+// Payments
+async function createPayment() {
+  const booking_id = parseInt(document.getElementById('payment-booking-id').value);
+  const amount = parseFloat(document.getElementById('payment-amount').value);
+  const currency = document.getElementById('payment-currency').value || 'USD';
+  const method = document.getElementById('payment-method').value || 'card';
+
+  if (!booking_id || Number.isNaN(amount)) {
+    showMessage('payments-message', 'Please provide booking id and amount', true);
+    return;
+  }
+
+  showMessage('payments-message', 'Creating payment...');
+  try {
+    const p = await apiFetch('/payments/create', {
+      method: 'POST',
+      body: JSON.stringify({ booking_id, amount, currency, method }),
+    });
+    showMessage('payments-message', 'Payment created');
+    // Append created payment to list if possible
+    try {
+      const ul = document.getElementById('payment-list');
+      if (ul) {
+        const li = document.createElement('li');
+        li.textContent = `#${p.id} Booking:${p.booking_id} ${p.amount} ${p.currency} — ${p.status}`;
+        // If the placeholder message exists, clear it
+        if (ul.children.length === 1 && ul.children[0].textContent.includes('not available')) ul.innerHTML = '';
+        ul.prepend(li);
+      }
+    } catch (err) {
+      // ignore UI append errors
+    }
+  } catch (e) {
+    showMessage('payments-message', `Failed to create payment: ${e.message}`, true);
+  }
+}
+
+// Reports
+async function fetchOccupancyReport() {
+  const start = document.getElementById('report-start').value;
+  const end = document.getElementById('report-end').value;
+  if (!start || !end) { showMessage('reports-message', 'Select start and end dates', true); return; }
+  showMessage('reports-message', 'Fetching occupancy...');
+  try {
+    const data = await apiFetch(`/reports/occupancy?start_date=${start}&end_date=${end}`);
+    document.getElementById('report-output').textContent = JSON.stringify(data, null, 2);
+    showMessage('reports-message', '');
+  } catch (e) {
+    showMessage('reports-message', `Failed: ${e.message}`, true);
+  }
+}
+
+async function fetchRevenueReport() {
+  const start = document.getElementById('report-start').value;
+  const end = document.getElementById('report-end').value;
+  if (!start || !end) { showMessage('reports-message', 'Select start and end dates', true); return; }
+  showMessage('reports-message', 'Fetching revenue...');
+  try {
+    const data = await apiFetch(`/reports/revenue?start_date=${start}&end_date=${end}`);
+    document.getElementById('report-output').textContent = JSON.stringify(data, null, 2);
+    showMessage('reports-message', '');
+  } catch (e) {
+    showMessage('reports-message', `Failed: ${e.message}`, true);
+  }
+}
+
+async function fetchTrendsReport() {
+  const start = document.getElementById('report-start').value;
+  const end = document.getElementById('report-end').value;
+  if (!start || !end) { showMessage('reports-message', 'Select start and end dates', true); return; }
+  showMessage('reports-message', 'Fetching trends...');
+  try {
+    const data = await apiFetch(`/reports/trends?start_date=${start}&end_date=${end}`);
+    document.getElementById('report-output').textContent = JSON.stringify(data, null, 2);
+    showMessage('reports-message', '');
+  } catch (e) {
+    showMessage('reports-message', `Failed: ${e.message}`, true);
   }
 }
 
@@ -333,7 +431,6 @@ async function listBookings() {
       bookings.forEach(b => {
           if (b.status !== "cancelled") {
               ul.appendChild(renderBookingItem(b));
-              console.log("appended")
           }
       });
     } else {
@@ -341,6 +438,27 @@ async function listBookings() {
     }
   } catch (e) {
     showMessage("bookings-message", `Failed to load bookings: ${e.message}`, true);
+  }
+}
+
+// Payments list
+async function listPayments() {
+  showMessage('payments-message', '');
+  try {
+    const payments = await apiFetch('/payments/');
+    const ul = document.getElementById('payment-list');
+    ul.innerHTML = '';
+    if (payments && payments.length > 0) {
+      payments.forEach(p => {
+        const li = document.createElement('li');
+        li.textContent = `#${p.id} Booking:${p.booking_id} ${p.amount} ${p.currency} — ${p.status}`;
+        ul.appendChild(li);
+      });
+    } else {
+      ul.innerHTML = '<li style="text-align: center; color: #7f8c8d;">No payments yet</li>';
+    }
+  } catch (e) {
+    showMessage('payments-message', `Failed to load payments: ${e.message}`, true);
   }
 }
 
@@ -398,6 +516,15 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-refresh-bookings").addEventListener("click", listBookings);
   document.getElementById("btn-add-booking").addEventListener("click", createBooking);
 
+  // Payments
+  document.getElementById("btn-refresh-payments").addEventListener("click", listPayments);
+  document.getElementById("btn-add-payment").addEventListener("click", createPayment);
+
+  // Reports buttons
+  document.getElementById('btn-occupancy-report').addEventListener('click', fetchOccupancyReport);
+  document.getElementById('btn-revenue-report').addEventListener('click', fetchRevenueReport);
+  document.getElementById('btn-trends-report').addEventListener('click', fetchTrendsReport);
+
   // Tab navigation
   document.querySelectorAll(".nav-tab").forEach(tab => {
     tab.addEventListener("click", (e) => {
@@ -434,6 +561,8 @@ document.addEventListener("DOMContentLoaded", () => {
         listRooms();
         listGuests();
         listBookings();
+        listRoomTypes();
+        listPayments();
       }).catch(() => {
         // Token invalid, show auth
         showAuthModal();

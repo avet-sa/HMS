@@ -100,7 +100,7 @@ def test_payment_integration_full_flow(client, admin_headers, regular_headers, d
 
     # create payment as regular user
     pay = client.post(
-        "/payments/",
+        "/payments/create",
         json={"booking_id": booking_id, "amount": float(final_bill), "method": "card"},
         headers=regular_headers,
     )
@@ -138,7 +138,7 @@ def test_overpayment_rejected_via_api(client, admin_headers, regular_headers, db
 
     # create two payments
     r1 = client.post(
-        "/payments/",
+        "/payments/create",
         json={"booking_id": booking_id, "amount": 90.0, "method": "card"},
         headers=regular_headers,
     )
@@ -146,7 +146,7 @@ def test_overpayment_rejected_via_api(client, admin_headers, regular_headers, db
     p1 = r1.json()
 
     r2 = client.post(
-        "/payments/",
+        "/payments/create",
         json={"booking_id": booking_id, "amount": 20.0, "method": "card"},
         headers=regular_headers,
     )
@@ -180,7 +180,7 @@ def test_refund_flow(client, admin_headers, regular_headers, db):
 
     # Create & process payment via API
     p = client.post(
-        "/payments/",
+        "/payments/create",
         json={"booking_id": booking_id, "amount": 100.0, "method": "card"},
         headers=regular_headers,
     )
@@ -198,7 +198,7 @@ def test_refund_flow(client, admin_headers, regular_headers, db):
 
     # Cannot refund a non-PAID payment (API)
     p2 = client.post(
-        "/payments/",
+        "/payments/create",
         json={"booking_id": booking_id, "amount": 10.0, "method": "card"},
         headers=regular_headers,
     )

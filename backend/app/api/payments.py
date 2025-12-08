@@ -1,3 +1,4 @@
+from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -10,7 +11,15 @@ from ..services.payment_service import PaymentService
 
 router = APIRouter(prefix="/payments")
 
-@router.post("/", response_model=PaymentResponse)
+@router.get("/", response_model=List[PaymentResponse])
+def list_payments(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    try:
+        payments = PaymentService.list_payments(db, current_user)
+        return payments
+    except HTTPException as e:
+        raise e
+
+@router.post("/create", response_model=PaymentResponse)
 def create_payment(payment_in: PaymentCreate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     try:
         payment = PaymentService.create_payment(db, payment_in.booking_id, payment_in.amount, payment_in.method, payment_in.currency)

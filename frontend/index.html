@@ -50,6 +50,8 @@
         <button class="nav-tab active" data-tab="rooms">Rooms</button>
         <button class="nav-tab" data-tab="guests">Guests</button>
         <button class="nav-tab" data-tab="bookings">Bookings</button>
+        <button class="nav-tab" data-tab="payments">Payments</button>
+        <button class="nav-tab" data-tab="reports">Reports</button>
       </nav>
 
       <!-- Rooms Tab -->
@@ -101,6 +103,81 @@
               </div>
               <button type="button" id="btn-add-room" class="btn btn-primary btn-full">Add Room</button>
             </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- Payments Tab -->
+      <section id="payments" class="tab-content">
+        <div class="section-header">
+          <h2>Payments</h2>
+          <button id="btn-refresh-payments" class="btn btn-secondary btn-sm">Refresh</button>
+        </div>
+        <p id="payments-message" class="message" aria-live="polite"></p>
+
+        <div class="content-wrapper">
+          <div class="list-panel">
+            <h3>Payments</h3>
+            <ul id="payment-list" class="list"></ul>
+          </div>
+
+          <div class="form-panel">
+            <h3>Create Payment</h3>
+            <form id="payment-form">
+              <div class="form-group">
+                <label for="payment-booking-id">Booking ID</label>
+                <input type="number" id="payment-booking-id" placeholder="e.g., 1">
+              </div>
+              <div class="form-group">
+                <label for="payment-amount">Amount</label>
+                <input type="number" id="payment-amount" placeholder="0.00" step="0.01">
+              </div>
+              <div class="form-group">
+                <label for="payment-currency">Currency</label>
+                <input type="text" id="payment-currency" value="USD">
+              </div>
+              <div class="form-group">
+                <label for="payment-method">Method</label>
+                <input type="text" id="payment-method" value="card">
+              </div>
+              <button type="button" id="btn-add-payment" class="btn btn-primary btn-full">Create Payment</button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- Reports Tab -->
+      <section id="reports" class="tab-content">
+        <div class="section-header">
+          <h2>Reports</h2>
+        </div>
+        <p id="reports-message" class="message" aria-live="polite"></p>
+
+        <div class="content-wrapper">
+          <div class="form-panel">
+            <h3>Generate Reports</h3>
+            <form id="reports-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="report-start">Start Date</label>
+                  <input type="date" id="report-start">
+                </div>
+                <div class="form-group">
+                  <label for="report-end">End Date</label>
+                  <input type="date" id="report-end">
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:8px;">
+                <button type="button" id="btn-occupancy-report" class="btn btn-secondary">Occupancy</button>
+                <button type="button" id="btn-revenue-report" class="btn btn-secondary">Revenue</button>
+                <button type="button" id="btn-trends-report" class="btn btn-secondary">Trends</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="list-panel">
+            <h3>Report Output</h3>
+            <pre id="report-output" style="white-space: pre-wrap;"></pre>
           </div>
         </div>
       </section>

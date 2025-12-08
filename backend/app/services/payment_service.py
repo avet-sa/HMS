@@ -1,6 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
@@ -107,3 +107,19 @@ class PaymentService:
         db.commit()
         db.refresh(payment)
         return payment
+
+    @staticmethod
+    def list_payments(db: Session, current_user: models.User) -> List[models.Payment]:
+        """
+        List payments with RBAC logic:
+        - ADMIN/MANAGER: see all payments
+        - REGULAR: see payments only for bookings they created (booking.created_by == current_user.id)
+        """
+        if current_user.permission_level in (models.PermissionLevel.ADMIN.value, models.PermissionLevel.MANAGER.value):
+            # Admin/Manager can see all payments
+            return db.query(models.Payment).all()
+        else:
+            # REGULAR users only see payments for bookings they created
+            return db.query(models.Payment).join(
+                models.Booking, models.Payment.booking_id == models.Booking.id
+            ).filter(models.Booking.created_by == current_user.id).all()
