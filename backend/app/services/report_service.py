@@ -60,11 +60,30 @@ class ReportService:
     def revenue_report(db: Session, start_date: date, end_date: date):
         # Sum PAID payments by date(processed_at)
         # Use date(trunc) via func.date
-        q = db.query(func.date(models.Payment.processed_at).label('day'), func.coalesce(func.sum(models.Payment.amount), 0).label('revenue'))\
-            .filter(models.Payment.status == models.Payment.PaymentStatus.PAID.value)
-        q = q.filter(models.Payment.processed_at >= start_date, models.Payment.processed_at < (end_date + timedelta(days=1)))
+        # Use func.date to normalize datetime->date for grouping and filtering so it works
+        # across SQLite/Postgres. Exclude null processed_at values.
+        q = db.query(
+            func.date(models.Payment.processed_at).label('day'),
+            func.coalesce(func.sum(models.Payment.amount), 0).label('revenue')
+        ).filter(
+            models.Payment.status == models.Payment.PaymentStatus.PAID.value,
+            models.Payment.processed_at != None,
+        )
+        q = q.filter(func.date(models.Payment.processed_at) >= start_date, func.date(models.Payment.processed_at) <= end_date)
         q = q.group_by('day')
-        rows = {r.day: Decimal(r.revenue) for r in q.all()}
+
+        rows = {}
+        for r in q.all():
+            day_val = r.day
+            # SQLite returns string for func.date, Postgres returns date
+            if isinstance(day_val, str):
+                try:
+                    day_obj = date.fromisoformat(day_val)
+                except Exception:
+                    day_obj = day_val
+            else:
+                day_obj = day_val
+            rows[day_obj] = Decimal(r.revenue)
 
         daily = []
         total = Decimal('0')
