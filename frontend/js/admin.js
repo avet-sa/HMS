@@ -154,14 +154,23 @@ function renderUsersTable(users) {
             permCell.appendChild(permDropdown);
         }
 
-        // Deactivate Button
-        if (user.is_active && user.id !== currentUser.id) {
-            const btnDeactivate = document.createElement("button");
-            btnDeactivate.className = "btn btn-secondary btn-icon";
-            btnDeactivate.textContent = "Deactivate";
-            btnDeactivate.style.color = "var(--danger)";
-            btnDeactivate.addEventListener("click", () => deactivateUser(user.id));
-            actionsCell.appendChild(btnDeactivate);
+        // Deactivate or Activate Button
+        if (user.id !== currentUser.id) {
+            if (user.is_active) {
+                const btnDeactivate = document.createElement("button");
+                btnDeactivate.className = "btn btn-secondary btn-icon";
+                btnDeactivate.textContent = "Deactivate";
+                btnDeactivate.style.color = "var(--danger)";
+                btnDeactivate.addEventListener("click", () => deactivateUser(user.id));
+                actionsCell.appendChild(btnDeactivate);
+            } else {
+                const btnActivate = document.createElement("button");
+                btnActivate.className = "btn btn-secondary btn-icon";
+                btnActivate.textContent = "Activate";
+                btnActivate.style.color = "var(--success)";
+                btnActivate.addEventListener("click", () => activateUser(user.id));
+                actionsCell.appendChild(btnActivate);
+            }
         }
 
         tbody.appendChild(tr);
@@ -259,6 +268,22 @@ async function deactivateUser(userId) {
         showMessage("users-message", "User deactivated successfully");
     } catch (e) {
         showMessage("users-message", `Failed to deactivate user: ${e.message}`, true);
+    }
+}
+
+async function activateUser(userId) {
+    if (!confirm("Activate this user?")) return;
+
+    showMessage("users-message", "Activating user...");
+    try {
+        await apiFetch(`/users/${userId}`, {
+            method: "PATCH",
+            body: JSON.stringify({ is_active: true })
+        });
+        await loadUsers();
+        showMessage("users-message", "User activated successfully");
+    } catch (e) {
+        showMessage("users-message", `Failed to activate user: ${e.message}`, true);
     }
 }
 
