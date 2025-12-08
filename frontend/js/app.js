@@ -295,8 +295,8 @@ async function fetchOccupancyReport() {
   if (!start || !end) { showMessage('reports-message', 'Select start and end dates', true); return; }
   showMessage('reports-message', 'Fetching occupancy...');
   try {
-    const data = await apiFetch(`/reports/occupancy?start_date=${start}&end_date=${end}`);
-    document.getElementById('report-output').textContent = JSON.stringify(data, null, 2);
+    const data = await apiFetch(`/occupancy?start_date=${start}&end_date=${end}`);
+    renderOccupancyReport(data);
     showMessage('reports-message', '');
   } catch (e) {
     showMessage('reports-message', `Failed: ${e.message}`, true);
@@ -309,8 +309,8 @@ async function fetchRevenueReport() {
   if (!start || !end) { showMessage('reports-message', 'Select start and end dates', true); return; }
   showMessage('reports-message', 'Fetching revenue...');
   try {
-    const data = await apiFetch(`/reports/revenue?start_date=${start}&end_date=${end}`);
-    document.getElementById('report-output').textContent = JSON.stringify(data, null, 2);
+    const data = await apiFetch(`/revenue?start_date=${start}&end_date=${end}`);
+    renderRevenueReport(data);
     showMessage('reports-message', '');
   } catch (e) {
     showMessage('reports-message', `Failed: ${e.message}`, true);
@@ -323,12 +323,335 @@ async function fetchTrendsReport() {
   if (!start || !end) { showMessage('reports-message', 'Select start and end dates', true); return; }
   showMessage('reports-message', 'Fetching trends...');
   try {
-    const data = await apiFetch(`/reports/trends?start_date=${start}&end_date=${end}`);
-    document.getElementById('report-output').textContent = JSON.stringify(data, null, 2);
+    const data = await apiFetch(`/trends?start_date=${start}&end_date=${end}`);
+    renderTrendsReport(data);
     showMessage('reports-message', '');
   } catch (e) {
     showMessage('reports-message', `Failed: ${e.message}`, true);
   }
+}
+
+// Report rendering helpers
+function safeText(s) {
+  return String(s == null ? "" : s);
+}
+
+function fmtDate(d) {
+  // Expect ISO date string or Date object
+  try {
+    const dt = typeof d === 'string' ? new Date(d) : d;
+    if (isNaN(dt)) return safeText(d);
+    return dt.toISOString().slice(0, 10);
+  } catch (e) {
+    return safeText(d);
+  }
+}
+
+function fmtCurrency(n, cur = 'USD') {
+  try {
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency: cur }).format(Number(n));
+  } catch (e) {
+    return `${n} ${cur}`;
+  }
+}
+
+function fmtPercent(n) {
+  try {
+    return `${Number(n).toFixed(2)}%`;
+  } catch (e) {
+    return safeText(n);
+  }
+}
+
+function renderOccupancyReport(data) {
+  clearReportExports();
+  const out = document.getElementById('report-output');
+  out.innerHTML = '';
+  const header = document.createElement('div');
+  header.className = 'report-header';
+  header.innerHTML = `<strong>Occupancy</strong> — ${fmtDate(data.start_date)} to ${fmtDate(data.end_date)} | Average: ${fmtPercent(data.average_occupancy)}`;
+  out.appendChild(header);
+
+  // Chart
+  renderOccupancyChart(data);
+
+  const table = document.createElement('table');
+  table.className = 'report-table';
+  const thead = document.createElement('thead');
+  thead.innerHTML = '<tr><th>Date</th><th>Occupied</th><th>Total Rooms</th><th>Occupancy</th></tr>';
+  table.appendChild(thead);
+  const tbody = document.createElement('tbody');
+  (data.daily || []).forEach(d => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${fmtDate(d.date)}</td><td>${safeText(d.occupied)}</td><td>${safeText(d.total_rooms)}</td><td>${fmtPercent(d.occupancy_rate)}</td>`;
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  out.appendChild(table);
+
+  // Export buttons
+  showExportButtons('occupancy', data);
+}
+
+function renderRevenueReport(data) {
+  clearReportExports();
+  const out = document.getElementById('report-output');
+  out.innerHTML = '';
+  const header = document.createElement('div');
+  header.className = 'report-header';
+  header.innerHTML = `<strong>Revenue</strong> — ${fmtDate(data.start_date)} to ${fmtDate(data.end_date)} | Total: ${fmtCurrency(data.total_revenue)}`;
+  out.appendChild(header);
+
+  // Chart
+  renderRevenueChart(data);
+
+  const table = document.createElement('table');
+  table.className = 'report-table';
+  const thead = document.createElement('thead');
+  thead.innerHTML = '<tr><th>Date</th><th>Revenue</th></tr>';
+  table.appendChild(thead);
+  const tbody = document.createElement('tbody');
+  (data.daily || []).forEach(d => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${fmtDate(d.date)}</td><td>${fmtCurrency(d.revenue)}</td>`;
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  out.appendChild(table);
+
+  // Export buttons
+  showExportButtons('revenue', data);
+}
+
+function renderTrendsReport(data) {
+  clearReportExports();
+  const out = document.getElementById('report-output');
+  out.innerHTML = '';
+  const header = document.createElement('div');
+  header.className = 'report-header';
+  header.innerHTML = `<strong>Booking Trends</strong> — ${fmtDate(data.start_date)} to ${fmtDate(data.end_date)}`;
+  out.appendChild(header);
+
+  const dl = document.createElement('dl');
+  dl.className = 'report-summary';
+  const add = (k, v) => {
+    const dt = document.createElement('dt'); dt.textContent = k;
+    const dd = document.createElement('dd'); dd.textContent = safeText(v);
+    dl.appendChild(dt); dl.appendChild(dd);
+  };
+  add('Total bookings', data.total_bookings);
+  add('Cancellations', data.cancellations);
+  add('No-shows', data.no_shows);
+  add('Cancellation rate', fmtPercent(data.cancellation_rate));
+  add('No-show rate', fmtPercent(data.no_show_rate));
+  out.appendChild(dl);
+
+  // Chart
+  renderTrendsChart(data);
+
+  // Export buttons
+  showExportButtons('trends', data);
+}
+
+// Chart.js rendering
+let currentReportChart = null;
+
+function renderOccupancyChart(data) {
+  const container = document.getElementById('report-chart-container');
+  const canvas = document.getElementById('report-chart');
+  if (!container || !canvas) return;
+  
+  const labels = (data.daily || []).map(d => fmtDate(d.date));
+  const rates = (data.daily || []).map(d => Number(d.occupancy_rate) || 0);
+  
+  container.style.display = 'block';
+  
+  if (currentReportChart) currentReportChart.destroy();
+  
+  currentReportChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Occupancy Rate (%)',
+        data: rates,
+        borderColor: '#3498db',
+        backgroundColor: 'rgba(52, 152, 219, 0.1)',
+        tension: 0.4,
+        fill: true,
+        borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: true, position: 'top' } },
+      scales: { y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } } }
+    }
+  });
+}
+
+function renderRevenueChart(data) {
+  const container = document.getElementById('report-chart-container');
+  const canvas = document.getElementById('report-chart');
+  if (!container || !canvas) return;
+  
+  const labels = (data.daily || []).map(d => fmtDate(d.date));
+  const revenues = (data.daily || []).map(d => Number(d.revenue) || 0);
+  
+  container.style.display = 'block';
+  
+  if (currentReportChart) currentReportChart.destroy();
+  
+  currentReportChart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Daily Revenue',
+        data: revenues,
+        backgroundColor: '#27ae60',
+        borderColor: '#229954',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: true, position: 'top' } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+}
+
+function renderTrendsChart(data) {
+  const container = document.getElementById('report-chart-container');
+  const canvas = document.getElementById('report-chart');
+  if (!container || !canvas) return;
+  
+  container.style.display = 'block';
+  
+  if (currentReportChart) currentReportChart.destroy();
+  
+  currentReportChart = new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels: ['Confirmed', 'Cancelled', 'No-shows'],
+      datasets: [{
+        data: [
+          Math.max(0, (data.total_bookings || 0) - (data.cancellations || 0) - (data.no_shows || 0)),
+          data.cancellations || 0,
+          data.no_shows || 0
+        ],
+        backgroundColor: ['#27ae60', '#e74c3c', '#f39c12'],
+        borderWidth: 2,
+        borderColor: '#ecf0f1'
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: true, position: 'right' } }
+    }
+  });
+}
+
+// Export functions
+function clearReportExports() {
+  const container = document.getElementById('report-export-buttons');
+  if (container) container.innerHTML = '';
+  const chartContainer = document.getElementById('report-chart-container');
+  if (chartContainer) chartContainer.style.display = 'none';
+}
+
+function showExportButtons(reportType, data) {
+  const container = document.getElementById('report-export-buttons');
+  if (!container) return;
+  
+  container.innerHTML = '';
+  
+  const csvBtn = document.createElement('button');
+  csvBtn.className = 'btn btn-secondary btn-sm';
+  csvBtn.textContent = '📥 CSV';
+  csvBtn.addEventListener('click', () => exportCSV(reportType, data));
+  container.appendChild(csvBtn);
+  
+  const pdfBtn = document.createElement('button');
+  pdfBtn.className = 'btn btn-secondary btn-sm';
+  pdfBtn.textContent = '📄 PDF';
+  pdfBtn.addEventListener('click', () => exportPDF(reportType, data));
+  container.appendChild(pdfBtn);
+}
+
+function exportCSV(reportType, data) {
+  let csv = '';
+  const timestamp = new Date().toISOString().slice(0, 10);
+  
+  if (reportType === 'occupancy') {
+    csv = 'Occupancy Report\n';
+    csv += `Period: ${fmtDate(data.start_date)} to ${fmtDate(data.end_date)}\n`;
+    csv += `Average Occupancy: ${fmtPercent(data.average_occupancy)}\n\n`;
+    csv += 'Date,Occupied,Total Rooms,Occupancy Rate\n';
+    (data.daily || []).forEach(d => {
+      csv += `${fmtDate(d.date)},${d.occupied},${d.total_rooms},${d.occupancy_rate}%\n`;
+    });
+  } else if (reportType === 'revenue') {
+    csv = 'Revenue Report\n';
+    csv += `Period: ${fmtDate(data.start_date)} to ${fmtDate(data.end_date)}\n`;
+    csv += `Total Revenue: ${fmtCurrency(data.total_revenue)}\n\n`;
+    csv += 'Date,Revenue\n';
+    (data.daily || []).forEach(d => {
+      csv += `${fmtDate(d.date)},${d.revenue}\n`;
+    });
+  } else if (reportType === 'trends') {
+    csv = 'Booking Trends Report\n';
+    csv += `Period: ${fmtDate(data.start_date)} to ${fmtDate(data.end_date)}\n\n`;
+    csv += 'Metric,Value\n';
+    csv += `Total Bookings,${data.total_bookings}\n`;
+    csv += `Cancellations,${data.cancellations}\n`;
+    csv += `No-shows,${data.no_shows}\n`;
+    csv += `Cancellation Rate,${data.cancellation_rate}%\n`;
+    csv += `No-show Rate,${data.no_show_rate}%\n`;
+  }
+  
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `${reportType}-report-${timestamp}.csv`;
+  link.click();
+}
+
+function exportPDF(reportType, data) {
+  // Simple PDF export using HTML2PDF library
+  const script = document.createElement('script');
+  script.src = 'https://cdn.jsdelivr.net/npm/html2pdf@0.10.1/dist/html2pdf.bundle.min.js';
+  script.onload = () => {
+    const element = document.getElementById('report-output');
+    const opt = {
+      margin: 10,
+      filename: `${reportType}-report-${new Date().toISOString().slice(0, 10)}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
+    };
+    html2pdf().set(opt).from(element).save();
+  };
+  document.head.appendChild(script);
+}
+
+// Date range helpers
+function getToday() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function addDays(date, n) {
+  const d = new Date(date);
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
+function setDateRange(days) {
+  const today = getToday();
+  const start = addDays(today, -days);
+  document.getElementById('report-start').value = start;
+  document.getElementById('report-end').value = today;
 }
 
 // Guest Functions

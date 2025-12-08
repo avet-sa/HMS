@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HMS - Hotel Management System</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
 </head>
 <body>
   <div class="container">
@@ -167,7 +168,12 @@
                   <input type="date" id="report-end">
                 </div>
               </div>
-              <div style="display:flex;gap:8px;margin-top:8px;">
+              <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+                <button type="button" class="btn btn-secondary btn-sm" onclick="setDateRange(7)" title="Last 7 days">7 Days</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="setDateRange(30)" title="Last 30 days">30 Days</button>
+                <button type="button" class="btn btn-secondary btn-sm" onclick="setDateRange(90)" title="Last 90 days">90 Days</button>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
                 <button type="button" id="btn-occupancy-report" class="btn btn-secondary">Occupancy</button>
                 <button type="button" id="btn-revenue-report" class="btn btn-secondary">Revenue</button>
                 <button type="button" id="btn-trends-report" class="btn btn-secondary">Trends</button>
@@ -176,8 +182,14 @@
           </div>
 
           <div class="list-panel">
-            <h3>Report Output</h3>
-            <pre id="report-output" style="white-space: pre-wrap;"></pre>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <h3 style="margin: 0;">Report Output</h3>
+              <div id="report-export-buttons" style="display: flex; gap: 8px;"></div>
+            </div>
+            <div id="report-chart-container" style="display: none; margin-bottom: 24px;">
+              <canvas id="report-chart"></canvas>
+            </div>
+            <div id="report-output" style="white-space: pre-wrap;"></div>
           </div>
         </div>
       </section>
