@@ -9,7 +9,7 @@ from fastapi.responses import JSONResponse
 import os
 
 # Import routers
-from backend.app.api import rooms, guests, bookings, auth, room_types, users, payments, invoices
+from backend.app.api import reports, rooms, guests, bookings, auth, room_types, users, payments, invoices
 
 # import logging
 # logging.basicConfig(level=logging.INFO)
@@ -62,6 +62,7 @@ app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(users.router, prefix="/users", tags=["Users"])
 app.include_router(payments.router, tags=["Payments"])
 app.include_router(invoices.router, tags=["Invoices"])
+app.include_router(reports.router, tags=["Reports"])
 
 if os.path.exists("frontend"):
     app.mount("/static", StaticFiles(directory="frontend"), name="static")
