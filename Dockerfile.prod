@@ -1,4 +1,4 @@
-# Production multi-stage Dockerfile using Poetry
+# Production multi-stage Dockerfile using pip
 FROM python:3.12.4-bookworm AS builder
 
 WORKDIR /app
@@ -10,16 +10,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-# Install poetry
-ENV POETRY_VERSION=1.5.1
-RUN curl -sSL https://install.python-poetry.org | python - --version $POETRY_VERSION
-ENV PATH="$PATH:/root/.local/bin"
+# Copy requirements first (for layer caching)
+COPY requirements.txt /app/
 
-# Copy pyproject and lock (if present)
-COPY pyproject.toml poetry.lock* /app/
-
-# Install dependencies into system environment (no virtualenv)
-RUN poetry config virtualenvs.create false && poetry install --no-dev --no-interaction --no-ansi
+# Install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . /app
