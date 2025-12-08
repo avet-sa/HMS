@@ -115,7 +115,7 @@ class PaymentService:
         - ADMIN/MANAGER: see all payments
         - REGULAR: see payments only for bookings they created (booking.created_by == current_user.id)
         """
-        if current_user.permission_level in (models.PermissionLevel.ADMIN.value, models.PermissionLevel.MANAGER.value):
+        if current_user.permission_level in (models.PermissionLevel.ADMIN, models.PermissionLevel.MANAGER):
             # Admin/Manager can see all payments
             return db.query(models.Payment).all()
         else:

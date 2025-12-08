@@ -154,43 +154,42 @@
         </div>
         <p id="reports-message" class="message" aria-live="polite"></p>
 
-        <div class="content-wrapper">
-          <div class="form-panel">
-            <h3>Generate Reports</h3>
-            <form id="reports-form">
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="report-start">Start Date</label>
-                  <input type="date" id="report-start">
-                </div>
-                <div class="form-group">
-                  <label for="report-end">End Date</label>
-                  <input type="date" id="report-end">
-                </div>
+        <!-- Reports Input Area -->
+        <div class="reports-input-area">
+          <h3>Generate Reports</h3>
+          <form id="reports-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="report-start">Start Date</label>
+                <input type="date" id="report-start">
               </div>
-              <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
-                <button type="button" class="btn btn-secondary btn-sm" onclick="setDateRange(7)" title="Last 7 days">7 Days</button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="setDateRange(30)" title="Last 30 days">30 Days</button>
-                <button type="button" class="btn btn-secondary btn-sm" onclick="setDateRange(90)" title="Last 90 days">90 Days</button>
+              <div class="form-group">
+                <label for="report-end">End Date</label>
+                <input type="date" id="report-end">
               </div>
-              <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-                <button type="button" id="btn-occupancy-report" class="btn btn-secondary">Occupancy</button>
-                <button type="button" id="btn-revenue-report" class="btn btn-secondary">Revenue</button>
-                <button type="button" id="btn-trends-report" class="btn btn-secondary">Trends</button>
-              </div>
-            </form>
-          </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="setDateRange(7)" title="Last 7 days">7 Days</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="setDateRange(30)" title="Last 30 days">30 Days</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="setDateRange(90)" title="Last 90 days">90 Days</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="setDateRange(180)" title="Last 180 days">180 Days</button>
+              <button type="button" class="btn btn-secondary btn-sm" onclick="setDateRange(365)" title="This year">365 Days</button>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+              <button type="button" id="btn-occupancy-report" class="btn btn-secondary">Occupancy</button>
+              <button type="button" id="btn-revenue-report" class="btn btn-secondary">Revenue</button>
+              <button type="button" id="btn-trends-report" class="btn btn-secondary">Trends</button>
+            </div>
+          </form>
+        </div>
 
-          <div class="list-panel">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-              <h3 style="margin: 0;">Report Output</h3>
-              <div id="report-export-buttons" style="display: flex; gap: 8px;"></div>
-            </div>
-            <div id="report-chart-container" style="display: none; margin-bottom: 24px;">
-              <canvas id="report-chart"></canvas>
-            </div>
-            <div id="report-output" style="white-space: pre-wrap;"></div>
+        <!-- Reports Output Area (Full Width) -->
+        <div class="reports-output-area">
+          <div style="grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h3 style="margin: 0;">Report Output</h3>
+            <div id="report-export-buttons" style="display: flex; gap: 8px;"></div>
           </div>
+          <div id="report-output"></div>
         </div>
       </section>
 

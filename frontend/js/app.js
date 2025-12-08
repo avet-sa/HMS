@@ -293,12 +293,22 @@ async function fetchOccupancyReport() {
   const start = document.getElementById('report-start').value;
   const end = document.getElementById('report-end').value;
   if (!start || !end) { showMessage('reports-message', 'Select start and end dates', true); return; }
+  
+  const out = document.getElementById('report-output');
+  out.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-secondary);">Loading occupancy report...</div>';
   showMessage('reports-message', 'Fetching occupancy...');
+  
   try {
     const data = await apiFetch(`/occupancy?start_date=${start}&end_date=${end}`);
+    if (!data.daily || data.daily.length === 0) {
+      out.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-secondary);">No occupancy data available for selected date range.</div>';
+      showMessage('reports-message', 'No data found', true);
+      return;
+    }
     renderOccupancyReport(data);
     showMessage('reports-message', '');
   } catch (e) {
+    out.innerHTML = '';
     showMessage('reports-message', `Failed: ${e.message}`, true);
   }
 }
@@ -307,12 +317,22 @@ async function fetchRevenueReport() {
   const start = document.getElementById('report-start').value;
   const end = document.getElementById('report-end').value;
   if (!start || !end) { showMessage('reports-message', 'Select start and end dates', true); return; }
+  
+  const out = document.getElementById('report-output');
+  out.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-secondary);">Loading revenue report...</div>';
   showMessage('reports-message', 'Fetching revenue...');
+  
   try {
     const data = await apiFetch(`/revenue?start_date=${start}&end_date=${end}`);
+    if (!data.daily || data.daily.length === 0) {
+      out.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-secondary);">No revenue data available for selected date range.</div>';
+      showMessage('reports-message', 'No data found', true);
+      return;
+    }
     renderRevenueReport(data);
     showMessage('reports-message', '');
   } catch (e) {
+    out.innerHTML = '';
     showMessage('reports-message', `Failed: ${e.message}`, true);
   }
 }
@@ -321,12 +341,22 @@ async function fetchTrendsReport() {
   const start = document.getElementById('report-start').value;
   const end = document.getElementById('report-end').value;
   if (!start || !end) { showMessage('reports-message', 'Select start and end dates', true); return; }
+  
+  const out = document.getElementById('report-output');
+  out.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-secondary);">Loading trends report...</div>';
   showMessage('reports-message', 'Fetching trends...');
+  
   try {
     const data = await apiFetch(`/trends?start_date=${start}&end_date=${end}`);
+    if (data.total_bookings === 0) {
+      out.innerHTML = '<div style="text-align: center; padding: 3rem; color: var(--text-secondary);">No booking data available for selected date range.</div>';
+      showMessage('reports-message', 'No data found', true);
+      return;
+    }
     renderTrendsReport(data);
     showMessage('reports-message', '');
   } catch (e) {
+    out.innerHTML = '';
     showMessage('reports-message', `Failed: ${e.message}`, true);
   }
 }
@@ -337,9 +367,13 @@ function safeText(s) {
 }
 
 function fmtDate(d) {
-  // Expect ISO date string or Date object
+  // Expect ISO date string (YYYY-MM-DD) or Date object
+  if (typeof d === 'string') {
+    // If already ISO format, return as-is
+    if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+  }
   try {
-    const dt = typeof d === 'string' ? new Date(d) : d;
+    const dt = typeof d === 'string' ? new Date(d + 'T00:00:00Z') : d;
     if (isNaN(dt)) return safeText(d);
     return dt.toISOString().slice(0, 10);
   } catch (e) {
@@ -363,31 +397,49 @@ function fmtPercent(n) {
   }
 }
 
+// Reusable function to create stat cards
+function createStatCard(label, value) {
+  const card = document.createElement('div');
+  card.style.cssText = 'display: flex; flex-direction: column; gap: 0.5rem;';
+  const lbl = document.createElement('div');
+  lbl.style.cssText = 'font-weight: 600; color: var(--text-secondary); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.05em;';
+  lbl.textContent = label;
+  const val = document.createElement('div');
+  val.style.cssText = 'font-size: 1.75rem; font-weight: 700; color: var(--accent);';
+  val.textContent = value;
+  card.appendChild(lbl);
+  card.appendChild(val);
+  return card;
+}
+
 function renderOccupancyReport(data) {
   clearReportExports();
   const out = document.getElementById('report-output');
   out.innerHTML = '';
   const header = document.createElement('div');
   header.className = 'report-header';
-  header.innerHTML = `<strong>Occupancy</strong> — ${fmtDate(data.start_date)} to ${fmtDate(data.end_date)} | Average: ${fmtPercent(data.average_occupancy)}`;
+  header.innerHTML = `<strong>Occupancy</strong> — ${fmtDate(data.start_date)} to ${fmtDate(data.end_date)}`;
   out.appendChild(header);
 
-  // Chart
-  renderOccupancyChart(data);
+  // Chart section
+  const chartSection = document.createElement('div');
+  chartSection.id = 'report-chart-container';
+  const canvas = document.createElement('canvas');
+  canvas.id = 'report-chart';
+  chartSection.appendChild(canvas);
+  out.appendChild(chartSection);
 
-  const table = document.createElement('table');
-  table.className = 'report-table';
-  const thead = document.createElement('thead');
-  thead.innerHTML = '<tr><th>Date</th><th>Occupied</th><th>Total Rooms</th><th>Occupancy</th></tr>';
-  table.appendChild(thead);
-  const tbody = document.createElement('tbody');
-  (data.daily || []).forEach(d => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${fmtDate(d.date)}</td><td>${safeText(d.occupied)}</td><td>${safeText(d.total_rooms)}</td><td>${fmtPercent(d.occupancy_rate)}</td>`;
-    tbody.appendChild(tr);
-  });
-  table.appendChild(tbody);
-  out.appendChild(table);
+  // Summary section
+  const summary = document.createElement('div');
+  summary.className = 'report-summary';
+  summary.appendChild(createStatCard('Average Occupancy', fmtPercent(data.average_occupancy)));
+  summary.appendChild(createStatCard('Peak Occupancy', fmtPercent(data.max_occupancy)));
+  summary.appendChild(createStatCard('Min Occupancy', fmtPercent(data.min_occupancy)));
+  summary.appendChild(createStatCard('Total Room-Nights', safeText(data.total_room_nights)));
+  out.appendChild(summary);
+  
+  // Render the actual chart
+  setTimeout(() => renderOccupancyChart(data), 0);
 
   // Export buttons
   showExportButtons('occupancy', data);
@@ -399,25 +451,37 @@ function renderRevenueReport(data) {
   out.innerHTML = '';
   const header = document.createElement('div');
   header.className = 'report-header';
-  header.innerHTML = `<strong>Revenue</strong> — ${fmtDate(data.start_date)} to ${fmtDate(data.end_date)} | Total: ${fmtCurrency(data.total_revenue)}`;
+  header.innerHTML = `<strong>Revenue</strong> — ${fmtDate(data.start_date)} to ${fmtDate(data.end_date)}`;
   out.appendChild(header);
 
-  // Chart
-  renderRevenueChart(data);
+  // Chart section
+  const chartSection = document.createElement('div');
+  chartSection.id = 'report-chart-container';
+  const canvas = document.createElement('canvas');
+  canvas.id = 'report-chart';
+  chartSection.appendChild(canvas);
+  out.appendChild(chartSection);
 
-  const table = document.createElement('table');
-  table.className = 'report-table';
-  const thead = document.createElement('thead');
-  thead.innerHTML = '<tr><th>Date</th><th>Revenue</th></tr>';
-  table.appendChild(thead);
-  const tbody = document.createElement('tbody');
-  (data.daily || []).forEach(d => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${fmtDate(d.date)}</td><td>${fmtCurrency(d.revenue)}</td>`;
-    tbody.appendChild(tr);
-  });
-  table.appendChild(tbody);
-  out.appendChild(table);
+  // Summary section
+  const summary = document.createElement('div');
+  summary.className = 'report-summary';
+  summary.appendChild(createStatCard('Total Revenue', fmtCurrency(data.total_revenue)));
+  summary.appendChild(createStatCard('Avg Daily Revenue', fmtCurrency(data.average_daily_revenue)));
+  summary.appendChild(createStatCard('Max Daily Revenue', fmtCurrency(data.max_daily_revenue)));
+  summary.appendChild(createStatCard('Min Daily Revenue', fmtCurrency(data.min_daily_revenue)));
+  summary.appendChild(createStatCard('Paid Bookings', safeText(data.total_paid_bookings)));
+  
+  // Add room type breakdown
+  if (data.room_type_breakdown && data.room_type_breakdown.length > 0) {
+    const topRoomType = data.room_type_breakdown.reduce((max, rt) => 
+      Number(rt.revenue) > Number(max.revenue) ? rt : max, data.room_type_breakdown[0]);
+    summary.appendChild(createStatCard('Top Room Type', `${topRoomType.room_type} (${fmtCurrency(topRoomType.revenue)})`));
+  }
+  
+  out.appendChild(summary);
+  
+  // Render the actual chart
+  setTimeout(() => renderRevenueChart(data), 0);
 
   // Export buttons
   showExportButtons('revenue', data);
@@ -432,22 +496,28 @@ function renderTrendsReport(data) {
   header.innerHTML = `<strong>Booking Trends</strong> — ${fmtDate(data.start_date)} to ${fmtDate(data.end_date)}`;
   out.appendChild(header);
 
-  const dl = document.createElement('dl');
-  dl.className = 'report-summary';
-  const add = (k, v) => {
-    const dt = document.createElement('dt'); dt.textContent = k;
-    const dd = document.createElement('dd'); dd.textContent = safeText(v);
-    dl.appendChild(dt); dl.appendChild(dd);
-  };
-  add('Total bookings', data.total_bookings);
-  add('Cancellations', data.cancellations);
-  add('No-shows', data.no_shows);
-  add('Cancellation rate', fmtPercent(data.cancellation_rate));
-  add('No-show rate', fmtPercent(data.no_show_rate));
-  out.appendChild(dl);
+  // Chart section
+  const chartSection = document.createElement('div');
+  chartSection.id = 'report-chart-container';
+  const canvas = document.createElement('canvas');
+  canvas.id = 'report-chart';
+  chartSection.appendChild(canvas);
+  out.appendChild(chartSection);
 
-  // Chart
-  renderTrendsChart(data);
+  const grid = document.createElement('div');
+  grid.className = 'report-summary';
+  grid.appendChild(createStatCard('Total Bookings', data.total_bookings));
+  grid.appendChild(createStatCard('Confirmed', data.confirmed_bookings));
+  grid.appendChild(createStatCard('Cancellations', data.cancellations));
+  grid.appendChild(createStatCard('No-shows', data.no_shows));
+  grid.appendChild(createStatCard('Cancel Rate', fmtPercent(data.cancellation_rate)));
+  grid.appendChild(createStatCard('No-show Rate', fmtPercent(data.no_show_rate)));
+  grid.appendChild(createStatCard('Avg Lead Time', `${Math.round(data.avg_lead_time_days) || 0} days`));
+  grid.appendChild(createStatCard('Avg Stay', `${Math.round(data.avg_length_of_stay_nights) || 0} nights`));
+  out.appendChild(grid);
+
+  // Chart - render after DOM is ready
+  setTimeout(() => renderTrendsChart(data), 0);
 
   // Export buttons
   showExportButtons('trends', data);
@@ -461,12 +531,41 @@ function renderOccupancyChart(data) {
   const canvas = document.getElementById('report-chart');
   if (!container || !canvas) return;
   
-  const labels = (data.daily || []).map(d => fmtDate(d.date));
-  const rates = (data.daily || []).map(d => Number(d.occupancy_rate) || 0);
+  let labels = (data.daily || []).map(d => fmtDate(d.date));
+  let rates = (data.daily || []).map(d => Number(d.occupancy_rate) || 0);
   
   container.style.display = 'block';
   
   if (currentReportChart) currentReportChart.destroy();
+  
+  // Aggregate data for large date ranges
+  const dayCount = labels.length;
+  if (dayCount > 90) {
+    const aggregateSize = dayCount > 180 ? 30 : 7; // Monthly for 180+ days, weekly for 90+ days
+    const newLabels = [];
+    const newRates = [];
+    const monthFormatter = new Intl.DateTimeFormat('en', { month: 'short', year: '2-digit' });
+    
+    for (let i = 0; i < labels.length; i += aggregateSize) {
+      const chunk = rates.slice(i, i + aggregateSize);
+      const avgRate = chunk.length > 0 ? chunk.reduce((a,b) => a+b, 0) / chunk.length : 0;
+      
+      let label;
+      if (dayCount > 180) {
+        // Monthly: use month name
+        const date = new Date(labels[i]);
+        label = monthFormatter.format(date);
+      } else {
+        // Weekly: use date range
+        label = labels[i] + ' to ' + labels[Math.min(i + aggregateSize - 1, labels.length - 1)];
+      }
+      
+      newLabels.push(label);
+      newRates.push(Number(avgRate.toFixed(2)));
+    }
+    labels = newLabels;
+    rates = newRates;
+  }
   
   currentReportChart = new Chart(canvas, {
     type: 'line',
@@ -479,13 +578,17 @@ function renderOccupancyChart(data) {
         backgroundColor: 'rgba(52, 152, 219, 0.1)',
         tension: 0.4,
         fill: true,
-        borderWidth: 2
+        borderWidth: 2,
+        pointRadius: dayCount > 90 ? 5 : 3
       }]
     },
     options: {
       responsive: true,
       plugins: { legend: { display: true, position: 'top' } },
-      scales: { y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } } }
+      scales: {
+        y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } },
+        x: { ticks: { maxRotation: 45, minRotation: 0 } }
+      }
     }
   });
 }
@@ -495,19 +598,48 @@ function renderRevenueChart(data) {
   const canvas = document.getElementById('report-chart');
   if (!container || !canvas) return;
   
-  const labels = (data.daily || []).map(d => fmtDate(d.date));
-  const revenues = (data.daily || []).map(d => Number(d.revenue) || 0);
+  let labels = (data.daily || []).map(d => fmtDate(d.date));
+  let revenues = (data.daily || []).map(d => Number(d.revenue) || 0);
   
   container.style.display = 'block';
   
   if (currentReportChart) currentReportChart.destroy();
+  
+  // Aggregate data for large date ranges
+  const dayCount = labels.length;
+  if (dayCount > 90) {
+    const aggregateSize = dayCount > 180 ? 30 : 7; // Monthly for 180+ days, weekly for 90+ days
+    const newLabels = [];
+    const newRevenues = [];
+    const monthFormatter = new Intl.DateTimeFormat('en', { month: 'short', year: '2-digit' });
+    
+    for (let i = 0; i < labels.length; i += aggregateSize) {
+      const chunk = revenues.slice(i, i + aggregateSize);
+      const sumRevenue = chunk.reduce((a,b) => a+b, 0);
+      
+      let label;
+      if (dayCount > 180) {
+        // Monthly: use month name
+        const date = new Date(labels[i]);
+        label = monthFormatter.format(date);
+      } else {
+        // Weekly: use date range
+        label = labels[i] + ' to ' + labels[Math.min(i + aggregateSize - 1, labels.length - 1)];
+      }
+      
+      newLabels.push(label);
+      newRevenues.push(Number(sumRevenue.toFixed(2)));
+    }
+    labels = newLabels;
+    revenues = newRevenues;
+  }
   
   currentReportChart = new Chart(canvas, {
     type: 'bar',
     data: {
       labels: labels,
       datasets: [{
-        label: 'Daily Revenue',
+        label: dayCount > 90 ? 'Period Revenue' : 'Daily Revenue',
         data: revenues,
         backgroundColor: '#27ae60',
         borderColor: '#229954',
@@ -517,7 +649,10 @@ function renderRevenueChart(data) {
     options: {
       responsive: true,
       plugins: { legend: { display: true, position: 'top' } },
-      scales: { y: { beginAtZero: true } }
+      scales: {
+        y: { beginAtZero: true },
+        x: { ticks: { maxRotation: 45, minRotation: 0 } }
+      }
     }
   });
 }
@@ -537,7 +672,7 @@ function renderTrendsChart(data) {
       labels: ['Confirmed', 'Cancelled', 'No-shows'],
       datasets: [{
         data: [
-          Math.max(0, (data.total_bookings || 0) - (data.cancellations || 0) - (data.no_shows || 0)),
+          data.confirmed_bookings || 0,
           data.cancellations || 0,
           data.no_shows || 0
         ],
@@ -619,21 +754,35 @@ function exportCSV(reportType, data) {
 }
 
 function exportPDF(reportType, data) {
-  // Simple PDF export using HTML2PDF library
-  const script = document.createElement('script');
-  script.src = 'https://cdn.jsdelivr.net/npm/html2pdf@0.10.1/dist/html2pdf.bundle.min.js';
-  script.onload = () => {
-    const element = document.getElementById('report-output');
-    const opt = {
-      margin: 10,
-      filename: `${reportType}-report-${new Date().toISOString().slice(0, 10)}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { orientation: 'portrait', unit: 'mm', format: 'a4' }
-    };
-    html2pdf().set(opt).from(element).save();
-  };
-  document.head.appendChild(script);
+  // Simple PDF export by printing to PDF
+  const element = document.getElementById('report-output');
+  if (!element) return;
+  
+  // Create a new window for printing
+  const printWindow = window.open('', '', 'width=900,height=600');
+  printWindow.document.write('<html><head><title>');
+  printWindow.document.write(reportType + ' Report - ' + new Date().toISOString().slice(0, 10));
+  printWindow.document.write('</title><style>');
+  printWindow.document.write(`
+    body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+    th { background: #3498db; color: white; padding: 10px; text-align: left; }
+    td { padding: 8px; border-bottom: 1px solid #ddd; }
+    tr:nth-child(even) { background: #f9f9f9; }
+    .report-header { font-size: 20px; font-weight: bold; margin: 20px 0 10px 0; border-bottom: 2px solid #3498db; }
+    .report-summary { margin: 20px 0; }
+    dt { font-weight: bold; margin-top: 10px; }
+    dd { margin-left: 20px; font-size: 16px; }
+  `);
+  printWindow.document.write('</style></head><body>');
+  printWindow.document.write(element.innerHTML);
+  printWindow.document.write('</body></html>');
+  printWindow.document.close();
+  
+  // Trigger print dialog
+  setTimeout(() => {
+    printWindow.print();
+  }, 250);
 }
 
 // Date range helpers
