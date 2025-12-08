@@ -2,6 +2,10 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from fastapi.responses import JSONResponse
 import os
 
 # Import routers
@@ -16,6 +20,18 @@ app = FastAPI(
     description="Backend API for a full-featured hotel management system",
     version="1.0.0",
 )
+
+# Configure rate limiting
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+
+# Add rate limit error handler
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_exceeded_handler(request, exc):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Rate limit exceeded. Too many requests."},
+    )
 
 # Enable CORS for frontend. Use environment variable in production to restrict allowed origins.
 allowed_origins = os.getenv("FRONTEND_ALLOWED_ORIGINS")
@@ -53,6 +69,7 @@ if os.path.exists("frontend"):
 
 # Root endpoint
 @app.get("/")
+# @limiter.limit("100/minute")
 def root():
     return {"message": "Welcome to the Hotel Management System API"}
 
