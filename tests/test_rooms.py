@@ -6,6 +6,7 @@ def room_type(client, admin_headers):
     response = client.post(
         "/room-types/",
         json={"name": "Test Room Type", "base_price": 100.0, "capacity": 2},
+        headers=admin_headers,
     )
     return response.json()
 

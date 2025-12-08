@@ -6,7 +6,8 @@ import pytest
 def room_type(client, admin_headers):
     response = client.post(
         "/room-types/",
-        json={"name": "Booking Test Room Type", "base_price": 150.0, "capacity": 2},
+        json={"name": "Test Room Type", "base_price": 100.0, "capacity": 2},
+        headers=admin_headers,
     )
     return response.json()
 

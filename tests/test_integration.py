@@ -9,7 +9,7 @@ def test_full_booking_flow(client, admin_headers):
         "capacity": 2,
         "description": "A luxurious suite with a view",
     }
-    response = client.post("/room-types/", json=room_type_data)
+    response = client.post("/room-types/", json=room_type_data, headers=admin_headers)
     assert response.status_code == 200, response.text
     room_type = response.json()
     assert room_type["name"] == room_type_data["name"]
