@@ -848,6 +848,9 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById('btn-revenue-report').addEventListener('click', fetchRevenueReport);
   document.getElementById('btn-trends-report').addEventListener('click', fetchTrendsReport);
 
+  // Set default date range (last 30 days)
+  setDateRange(30);
+
   // Tab navigation
   document.querySelectorAll(".nav-tab").forEach(tab => {
     tab.addEventListener("click", (e) => {
