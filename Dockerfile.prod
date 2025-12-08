@@ -1,0 +1,64 @@
+# Production multi-stage Dockerfile using Poetry
+FROM python:3.12.4-bookworm AS builder
+
+WORKDIR /app
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install poetry
+ENV POETRY_VERSION=1.5.1
+RUN curl -sSL https://install.python-poetry.org | python - --version $POETRY_VERSION
+ENV PATH="$PATH:/root/.local/bin"
+
+# Copy pyproject and lock (if present)
+COPY pyproject.toml poetry.lock* /app/
+
+# Install dependencies into system environment (no virtualenv)
+RUN poetry config virtualenvs.create false && poetry install --no-dev --no-interaction --no-ansi
+
+# Copy application code
+COPY . /app
+
+# Runtime image
+FROM python:3.12.4-slim-bookworm
+
+WORKDIR /app
+
+# Runtime deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Create log directory
+RUN mkdir -p /var/log/hms && chown -R appuser:appuser /var/log/hms
+
+# Copy installed packages from builder
+COPY --from=builder /usr/local /usr/local
+
+# Copy app code
+COPY --from=builder /app /app
+
+ENV PATH=/home/appuser/.local/bin:$PATH \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# Change ownership and switch to non-root user
+RUN chown -R appuser:appuser /app
+USER appuser
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:8000/docs || exit 1
+
+# Production command: use multiple workers and uvicorn
+CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]

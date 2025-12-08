@@ -22,6 +22,19 @@ services:
       retries: 5
     networks:
       - hms_network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.00'
+          memory: 1536M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
 
   # pgAdmin for Database Management
   pgadmin:
@@ -31,7 +44,7 @@ services:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
       PGADMIN_CONFIG_SERVER_MODE: 'False'
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'True'
     ports:
       - "5050:80"
     volumes:
@@ -46,7 +59,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.prod
     container_name: hms_backend
     environment:
       DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
@@ -58,6 +71,7 @@ services:
       - "8000:8000"
     volumes:
       - .:/app
+      - ./logs:/var/log/hms
     depends_on:
       db:
         condition: service_healthy
@@ -66,7 +80,7 @@ services:
       echo 'Running database migrations...' &&
       alembic upgrade head &&
       echo 'Starting FastAPI server...' &&
-      uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+      uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --workers 4
       "
     networks:
       - hms_network
@@ -75,6 +89,19 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          cpus: '1.50'
+          memory: 1536M
+        reservations:
+          cpus: '0.5'
+          memory: 512M
 
   # One-shot importer: optionally stream a dump from the host Postgres into the
   # containerized DB. This is disabled by default and should be enabled only
