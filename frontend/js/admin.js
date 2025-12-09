@@ -231,7 +231,6 @@ async function changePermission(userId, currentPermission) {
     else if (currentPermission === "MANAGER") newPermission = "ADMIN";
     else if (currentPermission === "ADMIN") newPermission = "REGULAR";
 
-    if (!confirm(`Change permission to ${newPermission}?`)) return;
 
     showMessage("users-message", "Updating permission...");
     try {

@@ -97,6 +97,7 @@ function renderOccupancyReport(data) {
   // Chart section
   const chartSection = document.createElement('div');
   chartSection.id = 'report-chart-container';
+  chartSection.style.height = '320px';
   const canvas = document.createElement('canvas');
   canvas.id = 'report-chart';
   chartSection.appendChild(canvas);
@@ -130,6 +131,7 @@ function renderRevenueReport(data) {
   // Chart section
   const chartSection = document.createElement('div');
   chartSection.id = 'report-chart-container';
+  chartSection.style.height = '520px';
   const canvas = document.createElement('canvas');
   canvas.id = 'report-chart';
   chartSection.appendChild(canvas);
@@ -172,6 +174,9 @@ function renderTrendsReport(data) {
   // Chart section
   const chartSection = document.createElement('div');
   chartSection.id = 'report-chart-container';
+  chartSection.style.height = '420px';
+  chartSection.style.maxWidth = '80%';
+  chartSection.style.margin = '0 auto';
   const canvas = document.createElement('canvas');
   canvas.id = 'report-chart';
   chartSection.appendChild(canvas);
@@ -255,7 +260,7 @@ function renderOccupancyChart(data) {
     },
     options: {
       responsive: true,
-      plugins: { legend: { display: true, position: 'top' } },
+      plugins: { legend: { display: false, position: 'top' } },
       scales: {
         y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%' } },
         x: { ticks: { maxRotation: 45, minRotation: 0 } }
@@ -312,14 +317,14 @@ function renderRevenueChart(data) {
       datasets: [{
         label: dayCount > 90 ? 'Period Revenue' : 'Daily Revenue',
         data: revenues,
-        backgroundColor: '#27ae60',
-        borderColor: '#229954',
+        borderColor: 'rgba(52, 152, 219, 0.1)',
+        backgroundColor: 'rgba(52, 152, 219, 0.2)',
         borderWidth: 1
       }]
     },
     options: {
       responsive: true,
-      plugins: { legend: { display: true, position: 'top' } },
+      plugins: { legend: { display: false, position: 'top' } },
       scales: {
         y: { beginAtZero: true },
         x: { ticks: { maxRotation: 45, minRotation: 0 } }

@@ -16,13 +16,13 @@
 }
 
 .stat-card {
-    background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+    /* background: linear-gradient(135deg, var(--accent), var(--accent-hover)); */
+    background: var(--bg-primary);
     border-radius: var(--radius-lg);
     padding: var(--space-lg);
     display: flex;
     align-items: center;
     gap: var(--space-md);
-    box-shadow: var(--shadow-md);
     transition: transform 0.2s ease;
 }
 

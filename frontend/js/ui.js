@@ -2,11 +2,53 @@
 
 // Room Functions
 function renderRoomItem(r) {
-  const li = document.createElement("li");
-  const text = document.createElement("span");
-  text.innerHTML = `<span class="item-id">#${r.id}</span>${r.number} — $${r.price_per_night}/night`;
-  li.appendChild(text);
-
+  const tr = document.createElement("tr");
+  
+  // ID column
+  const tdId = document.createElement("td");
+  tdId.textContent = r.id;
+  tr.appendChild(tdId);
+  
+  // Room number column
+  const tdNumber = document.createElement("td");
+  tdNumber.textContent = r.number;
+  tr.appendChild(tdNumber);
+  
+  // Type column
+  const tdType = document.createElement("td");
+  tdType.textContent = r.room_type?.name || "N/A";
+  tr.appendChild(tdType);
+  
+  // Price column
+  const tdPrice = document.createElement("td");
+  tdPrice.textContent = `$${r.price_per_night}`;
+  tr.appendChild(tdPrice);
+  
+  // Size column
+  const tdSize = document.createElement("td");
+  tdSize.textContent = r.square_meters || "N/A";
+  tr.appendChild(tdSize);
+  
+  // Max Occupancy column
+  const tdOccupancy = document.createElement("td");
+  tdOccupancy.textContent = r.room_type?.max_occupancy || "N/A";
+  tr.appendChild(tdOccupancy);
+  
+  // Floor column
+  const tdFloor = document.createElement("td");
+  tdFloor.textContent = r.floor;
+  tr.appendChild(tdFloor);
+  
+  // Status column
+  const tdStatus = document.createElement("td");
+  const statusBadge = document.createElement("span");
+  statusBadge.className = "badge badge-success";
+  statusBadge.textContent = "Available";
+  tdStatus.appendChild(statusBadge);
+  tr.appendChild(tdStatus);
+  
+  // Actions column
+  const tdActions = document.createElement("td");
   const btnDelete = document.createElement("button");
   btnDelete.className = "btn btn-secondary btn-sm";
   btnDelete.textContent = "Delete";
@@ -20,21 +62,22 @@ function renderRoomItem(r) {
       }
     }
   });
+  tdActions.appendChild(btnDelete);
+  tr.appendChild(tdActions);
 
-  li.appendChild(btnDelete);
-  return li;
+  return tr;
 }
 
 async function listRooms() {
   showMessage("rooms-message", "");
   try {
     const rooms = await listRoomsAPI();
-    const ul = document.getElementById("room-list");
-    ul.innerHTML = "";
+    const tbody = document.getElementById("room-list");
+    tbody.innerHTML = "";
     if (rooms && rooms.length > 0) {
-      rooms.forEach(r => ul.appendChild(renderRoomItem(r)));
+      rooms.forEach(r => tbody.appendChild(renderRoomItem(r)));
     } else {
-      ul.innerHTML = '<li style="text-align: center; color: #7f8c8d;">No rooms yet</li>';
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: #7f8c8d;">No rooms yet</td></tr>';
     }
   } catch (e) {
     showMessage("rooms-message", `Failed to load rooms: ${e.message}`, true);
@@ -83,11 +126,40 @@ async function createRoom() {
 
 // Guest Functions
 function renderGuestItem(g) {
-  const li = document.createElement("li");
-  const text = document.createElement("span");
-  text.innerHTML = `<span class="item-id">#${g.id}</span>${g.name} ${g.surname}`;
-  li.appendChild(text);
-
+  const tr = document.createElement("tr");
+  
+  // ID column
+  const tdId = document.createElement("td");
+  tdId.textContent = g.id;
+  tr.appendChild(tdId);
+  
+  // Name column
+  const tdName = document.createElement("td");
+  tdName.textContent = `${g.name} ${g.surname}`;
+  tr.appendChild(tdName);
+  
+  // Email column
+  const tdEmail = document.createElement("td");
+  tdEmail.textContent = g.email || "N/A";
+  tr.appendChild(tdEmail);
+  
+  // Phone column
+  const tdPhone = document.createElement("td");
+  tdPhone.textContent = g.phone || "N/A";
+  tr.appendChild(tdPhone);
+  
+  // Registered column
+  const tdRegistered = document.createElement("td");
+  tdRegistered.textContent = g.created_at ? new Date(g.created_at).toLocaleDateString() : "N/A";
+  tr.appendChild(tdRegistered);
+  
+  // Vip Tier column
+  const tdVip = document.createElement("td");
+  tdVip.textContent = g.vip_tier || "0";
+  tr.appendChild(tdVip);
+  
+  // Actions column
+  const tdActions = document.createElement("td");
   const btnDelete = document.createElement("button");
   btnDelete.className = "btn btn-secondary btn-sm";
   btnDelete.textContent = "Delete";
@@ -101,21 +173,22 @@ function renderGuestItem(g) {
       }
     }
   });
+  tdActions.appendChild(btnDelete);
+  tr.appendChild(tdActions);
 
-  li.appendChild(btnDelete);
-  return li;
+  return tr;
 }
 
 async function listGuests() {
   showMessage("guests-message", "");
   try {
     const guests = await listGuestsAPI();
-    const ul = document.getElementById("guest-list");
-    ul.innerHTML = "";
+    const tbody = document.getElementById("guest-list");
+    tbody.innerHTML = "";
     if (guests && guests.length > 0) {
-      guests.forEach(g => ul.appendChild(renderGuestItem(g)));
+      guests.forEach(g => tbody.appendChild(renderGuestItem(g)));
     } else {
-      ul.innerHTML = '<li style="text-align: center; color: #7f8c8d;">No guests yet</li>';
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #7f8c8d;">No guests yet</td></tr>';
     }
   } catch (e) {
     showMessage("guests-message", `Failed to load guests: ${e.message}`, true);
@@ -145,11 +218,54 @@ async function createGuest() {
 
 // Booking Functions
 function renderBookingItem(b) {
-  const li = document.createElement("li");
-  const text = document.createElement("span");
-  text.innerHTML = `<span class="item-id">#${b.id}</span>Guest #${b.guest.id} ${b.guest.name} ${b.guest.surname} → Room ${b.room_id} | ${b.check_in} - ${b.check_out} | ${b.number_of_nights} Nights`;
-  li.appendChild(text);
-
+  const tr = document.createElement("tr");
+  
+  // ID column
+  const tdId = document.createElement("td");
+  tdId.textContent = b.id;
+  tr.appendChild(tdId);
+  
+  // Guest column
+  const tdGuest = document.createElement("td");
+  tdGuest.textContent = b.guest ? `${b.guest.name} ${b.guest.surname}` : `Guest #${b.guest_id}`;
+  tr.appendChild(tdGuest);
+  
+  // Room column
+  const tdRoom = document.createElement("td");
+  tdRoom.textContent = b.room_id;
+  tr.appendChild(tdRoom);
+  
+  // Check-in column
+  const tdCheckIn = document.createElement("td");
+  tdCheckIn.textContent = b.check_in;
+  tr.appendChild(tdCheckIn);
+  
+  // Check-out column
+  const tdCheckOut = document.createElement("td");
+  tdCheckOut.textContent = b.check_out;
+  tr.appendChild(tdCheckOut);
+  
+  // Nights column
+  const tdNights = document.createElement("td");
+  tdNights.textContent = b.number_of_nights;
+  tr.appendChild(tdNights);
+  
+  // Total Price column
+  const tdPrice = document.createElement("td");
+  tdPrice.textContent = b.total_price ? `$${b.total_price}` : "N/A";
+  tr.appendChild(tdPrice);
+  
+  // Status column
+  const tdStatus = document.createElement("td");
+  const statusBadge = document.createElement("span");
+  const status = b.status || "confirmed";
+  statusBadge.className = `badge badge-${status === "confirmed" ? "success" : status === "checked_in" ? "info" : "warning"}`;
+  statusBadge.textContent = status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
+  tdStatus.appendChild(statusBadge);
+  tr.appendChild(tdStatus);
+  
+  // Actions column
+  const tdActions = document.createElement("td");
   const btnDelete = document.createElement("button");
   btnDelete.className = "btn btn-secondary btn-sm";
   btnDelete.textContent = "Cancel";
@@ -163,25 +279,29 @@ function renderBookingItem(b) {
       }
     }
   });
+  tdActions.appendChild(btnDelete);
+  tr.appendChild(tdActions);
 
-  li.appendChild(btnDelete);
-  return li;
+  return tr;
 }
 
 async function listBookings() {
   showMessage("bookings-message", "");
   try {
     const bookings = await listBookingsAPI();
-    const ul = document.getElementById("booking-list");
-    ul.innerHTML = "";
+    const tbody = document.getElementById("booking-list");
+    tbody.innerHTML = "";
     if (bookings && bookings.length > 0) {
       bookings.forEach(b => {
         if (b.status !== "cancelled") {
-          ul.appendChild(renderBookingItem(b));
+          tbody.appendChild(renderBookingItem(b));
         }
       });
+      if (tbody.children.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: #7f8c8d;">No active bookings</td></tr>';
+      }
     } else {
-      ul.innerHTML = '<li style="text-align: center; color: #7f8c8d;">No bookings yet</li>';
+      tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: #7f8c8d;">No bookings yet</td></tr>';
     }
   } catch (e) {
     showMessage("bookings-message", `Failed to load bookings: ${e.message}`, true);
@@ -253,16 +373,68 @@ async function listPayments() {
   showMessage('payments-message', '');
   try {
     const payments = await listPaymentsAPI();
-    const ul = document.getElementById('payment-list');
-    ul.innerHTML = '';
+    const tbody = document.getElementById('payment-list');
+    tbody.innerHTML = '';
     if (payments && payments.length > 0) {
       payments.forEach(p => {
-        const li = document.createElement('li');
-        li.textContent = `#${p.id} Booking:${p.booking_id} ${p.amount} ${p.currency} — ${p.status}`;
-        ul.appendChild(li);
+        const tr = document.createElement('tr');
+        
+        // ID column
+        const tdId = document.createElement('td');
+        tdId.textContent = p.id;
+        tr.appendChild(tdId);
+        
+        // Booking ID column
+        const tdBooking = document.createElement('td');
+        tdBooking.textContent = p.booking_id;
+        tr.appendChild(tdBooking);
+        
+        // Amount column
+        const tdAmount = document.createElement('td');
+        tdAmount.textContent = p.amount;
+        tr.appendChild(tdAmount);
+        
+        // Currency column
+        const tdCurrency = document.createElement('td');
+        tdCurrency.textContent = p.currency;
+        tr.appendChild(tdCurrency);
+        
+        // Method column
+        const tdMethod = document.createElement('td');
+        tdMethod.textContent = p.method || 'N/A';
+        tr.appendChild(tdMethod);
+        
+        // Reference column
+        const tdTransaction = document.createElement('td');
+        tdTransaction.textContent = p.reference || 'N/A';
+        tr.appendChild(tdTransaction);
+        
+        // Date column
+        const tdDate = document.createElement('td');
+        tdDate.textContent = p.created_at ? new Date(p.created_at).toLocaleDateString() : 'N/A';
+        tr.appendChild(tdDate);
+        
+        // Status column
+        const tdStatus = document.createElement('td');
+        const statusBadge = document.createElement('span');
+        const status = (p.status || '').toLowerCase();
+        const statusClass = (() => {
+          if (['completed', 'paid', 'succeeded'].includes(status)) return 'badge badge-success';
+          if (['pending', 'processing', 'in_progress'].includes(status)) return 'badge badge-warning';
+          if (['refunded'].includes(status)) return 'badge badge-info';
+          if (['failed', 'declined', 'canceled', 'cancelled', 'voided'].includes(status)) return 'badge badge-danger';
+          return 'badge badge-info';
+        })();
+        statusBadge.className = statusClass;
+        const label = status ? status.replace(/_/g, ' ') : 'Unknown';
+        statusBadge.textContent = label.charAt(0).toUpperCase() + label.slice(1);
+        tdStatus.appendChild(statusBadge);
+        tr.appendChild(tdStatus);
+        
+        tbody.appendChild(tr);
       });
     } else {
-      ul.innerHTML = '<li style="text-align: center; color: #7f8c8d;">No payments yet</li>';
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #7f8c8d;">No payments yet</td></tr>';
     }
   } catch (e) {
     showMessage('payments-message', `Failed to load payments: ${e.message}`, true);
