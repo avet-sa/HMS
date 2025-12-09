@@ -154,7 +154,7 @@ The purpose of this project is to build a production-grade Hotel Management Syst
 - [x] Monitoring & logging
 - [x] Minimal but functional frontend UI in dark theme
 - [ ] Email notifications (simulated or SMTP)
-- [ ] Audit logging for critical operations
+- [x] Audit logging for critical operations (bookings, payments, auth)
 
 ### 2.2. Out-of-Scope
 

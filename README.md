@@ -35,7 +35,10 @@ A comprehensive, full-featured hotel management system built with **Python FastA
 - **Role-Based Access Control (RBAC)** – REGULAR users, MANAGER staff, and ADMIN roles with endpoint-level authorization
 - **Rate Limiting** – API request throttling via slowapi to prevent abuse
 - **Automated Invoicing** – Auto-generate invoices when payments are processed with PDF export capability
+- **Audit Logging** – Comprehensive tracking of all critical operations (bookings, payments, auth) for compliance and debugging
+- **Pagination & Filtering** – All list endpoints support pagination, filtering, sorting, and search
 - **Docker Support** – Production-grade multi-stage Dockerfile and Docker Compose configuration
+- **Graceful Shutdown** – Signal handlers and health check endpoints for production deployments
 
 ---
 
@@ -390,6 +393,24 @@ Defines refund tiers based on days before check-in.
 | GET | /reports/occupancy | Bearer JWT | MANAGER, ADMIN | Occupancy rate by date range |
 | GET | /reports/revenue | Bearer JWT | MANAGER, ADMIN | Revenue totals by date range (SQLite/Postgres compatible) |
 | GET | /reports/trends | Bearer JWT | MANAGER, ADMIN | Booking trends over time |
+
+### **Audit Logs** (Admin compliance tracking)
+| Method | Endpoint | Auth | Role | Description |
+|--------|----------|------|------|-------------|
+| GET | /audit-logs/ | Bearer JWT | MANAGER, ADMIN | List audit logs with filtering and pagination |
+| GET | /audit-logs/{id} | Bearer JWT | MANAGER, ADMIN | Get specific audit log details |
+
+**Query Parameters (Audit Logs):**
+- `page` (default: 1) - Page number
+- `page_size` (default: 50, max: 100) - Items per page
+- `user_id` - Filter by user ID
+- `action` - Filter by action (CREATE, UPDATE, DELETE, LOGIN_SUCCESS, etc.)
+- `entity_type` - Filter by entity type (booking, payment, user, etc.)
+- `entity_id` - Filter by specific entity ID
+- `date_from` - Filter from date (ISO format)
+- `date_to` - Filter to date (ISO format)
+- `sort_by` - Sort field (default: created_at)
+- `sort_order` - Sort order (asc/desc, default: desc)
 
 **Query Parameters (Reports):**
 - `start_date` (YYYY-MM-DD)

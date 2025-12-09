@@ -214,3 +214,112 @@
     margin-bottom: var(--space-xl);
     font-size: 1rem;
 }
+/* Audit Logs Filters */
+.filters-panel {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: var(--space-md);
+    margin-bottom: var(--space-lg);
+    padding: var(--space-lg);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+}
+
+.filters-panel .form-group {
+    margin-bottom: 0;
+}
+
+.filters-panel .btn {
+    align-self: end;
+}
+
+/* Audit Logs Table */
+.audit-logs-table {
+    width: 100%;
+    font-size: 0.875rem;
+}
+
+.audit-logs-table th {
+    background: var(--bg-secondary);
+    padding: var(--space-md);
+    text-align: left;
+    font-weight: 600;
+}
+
+.audit-logs-table td {
+    padding: var(--space-sm) var(--space-md);
+    border-bottom: 1px solid var(--border-light);
+}
+
+.audit-logs-table tr:hover {
+    background: var(--bg-hover);
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-top: var(--space-lg);
+}
+
+.pagination button {
+    padding: var(--space-sm) var(--space-md);
+    border: 1px solid var(--border-color);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.pagination button:hover:not(:disabled) {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+}
+
+.pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination .page-info {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+/* Badge Styles */
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1;
+    color: white;
+    text-align: center;
+    white-space: nowrap;
+    border-radius: var(--radius-sm);
+}
+
+.badge-success {
+    background-color: var(--success);
+}
+
+.badge-danger {
+    background-color: var(--danger);
+}
+
+.badge-warning {
+    background-color: var(--warning);
+    color: var(--text-primary);
+}
+
+.badge-info {
+    background-color: #17a2b8;
+}
+
+.badge-secondary {
+    background-color: #6c757d;
+}

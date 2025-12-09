@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date
@@ -10,17 +10,39 @@ from backend.app.services.booking_service import BookingService
 from backend.app.dependencies.security import require_role
 from backend.app.core.security import get_current_user
 from backend.app.utils.pagination import PaginatedResponse
+from backend.app.utils.audit import log_booking_action
 
 router = APIRouter()
 
 @router.post("/", response_model=BookingResponse)
 def create_booking(
     booking_in: BookingCreate,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
     try:
-        return BookingService.create_booking(db, booking_in, created_by_user_id=current_user.id)
+        booking = BookingService.create_booking(db, booking_in, created_by_user_id=current_user.id)
+        
+        # Log audit
+        log_booking_action(
+            db=db,
+            user=current_user,
+            action="CREATE",
+            booking_id=booking.id,
+            description=f"Created booking #{booking.booking_number} for guest ID {booking.guest_id}",
+            new_values={
+                "booking_number": booking.booking_number,
+                "guest_id": booking.guest_id,
+                "room_id": booking.room_id,
+                "check_in_date": str(booking.check_in_date),
+                "check_out_date": str(booking.check_out_date),
+                "status": booking.status.value
+            },
+            request=request
+        )
+        
+        return booking
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -101,6 +123,7 @@ def confirm_booking(
 @router.post("/{booking_id}/check-in", response_model=BookingResponse)
 def check_in(
     booking_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(require_role(models.PermissionLevel.ADMIN, models.PermissionLevel.MANAGER))
 ):
@@ -108,6 +131,18 @@ def check_in(
         booking = BookingService.check_in_booking(db, booking_id)
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
+        
+        # Log audit
+        log_booking_action(
+            db=db,
+            user=current_user,
+            action="CHECK_IN",
+            booking_id=booking.id,
+            description=f"Guest checked in for booking #{booking.booking_number}",
+            new_values={"status": booking.status.value},
+            request=request
+        )
+        
         return booking
     except HTTPException as e:
         raise e
@@ -115,6 +150,7 @@ def check_in(
 @router.post("/{booking_id}/check-out", response_model=BookingResponse)
 def check_out(
     booking_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(require_role(models.PermissionLevel.ADMIN, models.PermissionLevel.MANAGER))
 ):
@@ -122,6 +158,18 @@ def check_out(
         booking = BookingService.check_out_booking(db, booking_id)
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
+        
+        # Log audit
+        log_booking_action(
+            db=db,
+            user=current_user,
+            action="CHECK_OUT",
+            booking_id=booking.id,
+            description=f"Guest checked out for booking #{booking.booking_number}",
+            new_values={"status": booking.status.value},
+            request=request
+        )
+        
         return booking
     except HTTPException as e:
         raise e
@@ -129,6 +177,7 @@ def check_out(
 @router.post("/{booking_id}/cancel", response_model=BookingResponse)
 def cancel_booking(
     booking_id: int,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
@@ -142,9 +191,23 @@ def cancel_booking(
             if booking.created_by != current_user.id:
                 raise HTTPException(status_code=403, detail="You can only cancel your own bookings")
         
+        old_status = booking.status.value
         booking = BookingService.cancel_booking(db, booking_id)
         if not booking:
             raise HTTPException(status_code=404, detail="Booking not found")
+        
+        # Log audit
+        log_booking_action(
+            db=db,
+            user=current_user,
+            action="CANCEL",
+            booking_id=booking.id,
+            description=f"Cancelled booking #{booking.booking_number}",
+            old_values={"status": old_status},
+            new_values={"status": booking.status.value},
+            request=request
+        )
+        
         return booking
     except HTTPException as e:
         raise e

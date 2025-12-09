@@ -266,3 +266,39 @@ class CancellationPolicy(Base):
 
     def __repr__(self):
         return f"<CancellationPolicy {self.name}>"
+
+# -----------------------------
+# Audit Log
+# -----------------------------
+class AuditLog(Base):
+    """Track all critical operations for compliance and debugging"""
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # Who performed the action
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    username = Column(String(50), nullable=True)  # Denormalized for deleted users
+    
+    # What action was performed
+    action = Column(String(50), nullable=False, index=True)  # CREATE, UPDATE, DELETE, LOGIN, LOGOUT, etc.
+    entity_type = Column(String(50), nullable=False, index=True)  # booking, payment, room, user, etc.
+    entity_id = Column(Integer, nullable=True, index=True)  # ID of the affected entity
+    
+    # Details about the change
+    description = Column(String(500))  # Human-readable description
+    old_values = Column(String(2000))  # JSON string of old values
+    new_values = Column(String(2000))  # JSON string of new values
+    
+    # Request metadata
+    ip_address = Column(String(45))  # IPv4 or IPv6
+    user_agent = Column(String(500))
+    
+    # Timestamp
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False, index=True)
+    
+    # Relationships
+    user = relationship("User")
+    
+    def __repr__(self):
+        return f"<AuditLog {self.action} on {self.entity_type}#{self.entity_id} by {self.username}>"

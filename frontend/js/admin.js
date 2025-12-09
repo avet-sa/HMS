@@ -291,3 +291,138 @@ document.addEventListener("DOMContentLoaded", async () => {
         await loadUsers();
     }
 });
+
+// ==========================================
+// AUDIT LOGS
+// ==========================================
+
+let currentLogsPage = 1;
+let logsFilters = {
+    action: '',
+    entity_type: '',
+    date_from: '',
+    date_to: ''
+};
+
+async function loadAuditLogs(page = 1) {
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+
+    try {
+        let url = `${API_BASE_URL}/audit-logs/?page=${page}&page_size=50`;
+        
+        // Apply filters
+        if (logsFilters.action) url += `&action=${logsFilters.action}`;
+        if (logsFilters.entity_type) url += `&entity_type=${logsFilters.entity_type}`;
+        if (logsFilters.date_from) url += `&date_from=${logsFilters.date_from}T00:00:00`;
+        if (logsFilters.date_to) url += `&date_to=${logsFilters.date_to}T23:59:59`;
+
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to load audit logs');
+        }
+
+        const data = await response.json();
+        displayAuditLogs(data.items || []);
+        updateLogsPagination(data.page || 1, data.total_pages || 1);
+        currentLogsPage = page;
+
+        showMessage('logs-message', 'Audit logs loaded successfully', 'success');
+    } catch (error) {
+        console.error('Error loading audit logs:', error);
+        showMessage('logs-message', 'Failed to load audit logs', 'error');
+    }
+}
+
+function displayAuditLogs(logs) {
+    const tbody = document.getElementById('audit-logs-table-body');
+    if (!tbody) return;
+
+    if (logs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No audit logs found</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = logs.map(log => {
+        const timestamp = new Date(log.created_at).toLocaleString();
+        return `
+            <tr>
+                <td>${timestamp}</td>
+                <td>${log.username || 'SYSTEM'}</td>
+                <td><span class="badge badge-${getActionBadgeClass(log.action)}">${log.action}</span></td>
+                <td>${log.entity_type}</td>
+                <td>${log.entity_id || '-'}</td>
+                <td>${log.description || '-'}</td>
+                <td>${log.ip_address || '-'}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function getActionBadgeClass(action) {
+    const actionClasses = {
+        'CREATE': 'success',
+        'UPDATE': 'info',
+        'DELETE': 'danger',
+        'LOGIN_SUCCESS': 'success',
+        'LOGIN_FAILED': 'danger',
+        'LOGOUT': 'secondary',
+        'CHECK_IN': 'info',
+        'CHECK_OUT': 'info',
+        'CANCEL': 'warning',
+        'PROCESS': 'success',
+        'REFUND': 'warning'
+    };
+    return actionClasses[action] || 'secondary';
+}
+
+function updateLogsPagination(currentPage, totalPages) {
+    const paginationDiv = document.getElementById('logs-pagination');
+    if (!paginationDiv) return;
+
+    let html = '';
+    
+    // Previous button
+    html += `<button onclick="loadAuditLogs(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>&laquo; Previous</button>`;
+    
+    // Page info
+    html += `<span class="page-info">Page ${currentPage} of ${totalPages}</span>`;
+    
+    // Next button
+    html += `<button onclick="loadAuditLogs(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Next &raquo;</button>`;
+    
+    paginationDiv.innerHTML = html;
+}
+
+function applyLogFilters() {
+    logsFilters.action = document.getElementById('log-action-filter')?.value || '';
+    logsFilters.entity_type = document.getElementById('log-entity-filter')?.value || '';
+    logsFilters.date_from = document.getElementById('log-date-from')?.value || '';
+    logsFilters.date_to = document.getElementById('log-date-to')?.value || '';
+    
+    loadAuditLogs(1);
+}
+
+// Event listeners for audit logs
+document.addEventListener('DOMContentLoaded', function() {
+    const btnRefreshLogs = document.getElementById('btn-refresh-logs');
+    const btnApplyFilters = document.getElementById('btn-apply-log-filters');
+    
+    if (btnRefreshLogs) {
+        btnRefreshLogs.addEventListener('click', () => loadAuditLogs(currentLogsPage));
+    }
+    
+    if (btnApplyFilters) {
+        btnApplyFilters.addEventListener('click', applyLogFilters);
+    }
+    
+    // Load audit logs if admin panel is visible
+    if (document.getElementById('admin-panel').style.display !== 'none') {
+        loadAuditLogs();
+    }
+});
