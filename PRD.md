@@ -300,8 +300,8 @@ The heart of the application.
 
 **Check-out:**
 
-- [ ] Calculate extras (if any)
-- [ ] Produce invoice PDF
+- [x] Calculate extras (if any)
+- [x] Produce invoice PDF (via invoices tab or auto-generated on payment)
 - [ ] Set room → CLEANING
 - [ ] Free room after cleaning
 
@@ -361,13 +361,13 @@ Powered by FastAPI BackgroundTasks or Celery + Redis.
 
 ## 7. PDF Generation
 
-Using ReportLab or HTML-to-PDF.
+Using ReportLab for professional PDF documents.
 
 **Documents:**
 
 - [ ] Booking confirmation
 - [ ] Registration card
-- [x] Invoice (auto-generated on payment)
+- [x] Invoice (auto-generated on payment + manual generation + PDF download)
 - [ ] Daily report
 
 ---

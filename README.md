@@ -34,7 +34,7 @@ A comprehensive, full-featured hotel management system built with **Python FastA
 - **Reporting & Analytics** – Occupancy, revenue, and booking trend reports with cross-database support (PostgreSQL/SQLite)
 - **Role-Based Access Control (RBAC)** – REGULAR users, MANAGER staff, and ADMIN roles with endpoint-level authorization
 - **Rate Limiting** – API request throttling via slowapi to prevent abuse
-- **Automated Invoicing** – Auto-generate invoices when payments are processed
+- **Automated Invoicing** – Auto-generate invoices when payments are processed with PDF export capability
 - **Docker Support** – Production-grade multi-stage Dockerfile and Docker Compose configuration
 
 ---
@@ -56,7 +56,8 @@ A comprehensive, full-featured hotel management system built with **Python FastA
 - **CSS3** – Dark/light theme toggle with localStorage persistence, responsive table-based layouts
 - **Vanilla JavaScript (ES6+)** – Modularized architecture (7 separate modules: config, utils, theme, api, auth, ui, reports, app)
 - **UI Components** – Table-based data display with badges, action buttons, and sortable columns
-- **Forms** – Tab-based UI for rooms, guests, bookings, payments, and reports
+- **Forms** – Tab-based UI for rooms, guests, bookings, payments, invoices, and reports
+- **Auto-load Data** – Automatically refreshes data when switching tabs
 - **Admin Panel** – User management with 3-tier permission system (REGULAR, MANAGER, ADMIN) and activation controls
 
 ### **Database (Development & Test)**
@@ -92,7 +93,7 @@ HMS1/
 │   │   │   ├── guests.py             # /guests/ CRUD
 │   │   │   ├── bookings.py           # /bookings/ + lifecycle endpoints
 │   │   │   ├── payments.py           # /payments/ GET, /payments/create, /payments/{id}/process, refund
-│   │   │   ├── invoices.py           # /invoices/ endpoints
+│   │   │   ├── invoices.py           # /invoices/ endpoints (list, generate, PDF download)
 │   │   │   └── reports.py            # /reports/occupancy, revenue, trends
 │   │   ├── core/
 │   │   │   ├── config.py             # Environment & database config
@@ -119,7 +120,7 @@ HMS1/
 │   │   │   ├── guest_service.py      # Guest CRUD
 │   │   │   ├── booking_service.py    # Booking lifecycle, no-show penalties
 │   │   │   ├── payment_service.py    # Payment creation, processing, refunds, auto-invoice
-│   │   │   ├── invoice_service.py    # Invoice generation
+│   │   │   ├── invoice_service.py    # Invoice generation and PDF export (reportlab)
 │   │   │   ├── report_service.py     # Occupancy, revenue, trends reports (SQLite/Postgres compatible)
 │   │   │   └── refund_policy.py      # Cancellation & refund calculation
 │   │   └── utils/
@@ -134,7 +135,7 @@ HMS1/
 │           ├── 005_payments_invoices.py
 │           └── 006_cancellation_policies.py
 ├── frontend/
-│   ├── index.html                    # Main dashboard (auth, rooms, guests, bookings, payments, reports)
+│   ├── index.html                    # Main dashboard (auth, rooms, guests, bookings, payments, invoices, reports)
 │   ├── admin.html                    # Admin panel (user management with permission controls)
 │   ├── styles.css                    # Dark/light theme, responsive table layouts, badge components
 │   ├── admin.css                     # Admin panel specific styles
@@ -379,8 +380,9 @@ Defines refund tiers based on days before check-in.
 ### **Invoices**
 | Method | Endpoint | Auth | Role | Description |
 |--------|----------|------|------|-------------|
-| GET | /invoices/ | Bearer JWT | MANAGER, ADMIN | List all invoices |
-| GET | /invoices/{id} | Bearer JWT | MANAGER, ADMIN | Get invoice details |
+| GET | /invoices/ | Bearer JWT | ANY | List all invoices |
+| POST | /invoices/{booking_id} | Bearer JWT | MANAGER, ADMIN | Generate invoice for booking |
+| GET | /invoices/{invoice_id}/pdf | Bearer JWT | ANY | Download invoice as PDF |
 
 ### **Reports** (Manager/Admin analytics)
 | Method | Endpoint | Auth | Role | Description |
@@ -529,7 +531,13 @@ Defines refund tiers based on days before check-in.
    - Admin confirms payment processing (→ PAID, auto-generates invoice)
    - Admin can refund (if PAID) or fail (if PENDING)
 
-8. **View reports:**
+8. **Manage invoices:**
+   - Dashboard → Invoices tab
+   - View all invoices with booking details, amounts, and issue dates
+   - Generate invoice manually for checked-out booking
+   - Download invoices as PDF with professional formatting
+
+9. **View reports:**
    - Dashboard → Reports tab
    - Select date range and click Occupancy/Revenue/Trends
    - Reports display JSON data (could be formatted as charts in future)
@@ -605,11 +613,11 @@ Defines refund tiers based on days before check-in.
   - config.js – API configuration
   - utils.js – Utility functions
   - theme.js – Theme management
-  - api.js – HTTP client with auth
+  - api.js – HTTP client with auth (includes invoice & PDF download)
   - auth.js – Authentication logic
-  - ui.js – CRUD rendering
+  - ui.js – CRUD rendering (includes invoice table & PDF download)
   - reports.js – Chart generation
-  - app.js – Application initialization
+  - app.js – Application initialization (auto-loads data on tab switch)
   - admin.js – User management
 
 ### **7. Cancellation & Refund Policies**
@@ -631,6 +639,11 @@ PENDING → CONFIRMED → CHECKED_IN → CHECKED_OUT (final bill calculated)
 - Admin can process (→ PAID), fail (→ FAILED), or refund (→ REFUNDED)
 - Auto-generate invoice on PAID
 - Prevent overpayments (check against final bill)
+- **PDF Invoice Export:**
+  - Professional PDF invoices using reportlab library
+  - Includes invoice number, booking details, guest information
+  - Itemized charges with subtotal, 10% tax, and total
+  - Download from Invoices tab or via API endpoint
 
 ### **4. Cancellation & Refund Policies**
 - Define flexible policies (e.g., 7 days = 100% refund, 2 days = 50% refund, <2 = no refund)
