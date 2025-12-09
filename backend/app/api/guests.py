@@ -1,24 +1,45 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
 from ..db.session import get_db
 from ..db import models
-from ..schemas.guest import GuestCreate, GuestUpdate, GuestResponse
+from ..schemas.guest import GuestCreate, GuestResponse
 from ..services.guest_service import GuestService
 from ..dependencies.security import require_role
 from ..core.security import get_current_user
 from ..utils.pagination import PaginatedResponse
+from ..utils.audit import log_audit
 
 router = APIRouter()
 
 @router.post("/", response_model=GuestResponse)
 def create_guest(
     guest_in: GuestCreate,
+    request: Request,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(require_role(models.PermissionLevel.ADMIN, models.PermissionLevel.MANAGER))
 ):
-    return GuestService.create_guest(db, guest_in)
+    guest = GuestService.create_guest(db, guest_in)
+    
+    # Log audit
+    log_audit(
+        db=db,
+        user=current_user,
+        action="CREATE",
+        entity_type="guest",
+        entity_id=guest.id,
+        description=f"Created guest {guest.name} {guest.surname}",
+        new_values={
+            "name": guest.name,
+            "surname": guest.surname,
+            "email": guest.email,
+            "phone_number": guest.phone_number
+        },
+        request=request
+    )
+    
+    return guest
 
 @router.get("/", response_model=PaginatedResponse[GuestResponse])
 def list_guests(
@@ -58,10 +79,35 @@ def update_guest(
 @router.delete("/{guest_id}", response_model=dict)
 def delete_guest(
     guest_id: int,
+    request: Request,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(require_role(models.PermissionLevel.ADMIN))
+    current_user: models.User = Depends(require_role(models.PermissionLevel.ADMIN, models.PermissionLevel.MANAGER))
 ):
-    success = GuestService.delete_guest(db, guest_id)
-    if not success:
+    # Get guest data before deletion for audit log
+    guest = GuestService.get_guest(db, guest_id)
+    if not guest:
         raise HTTPException(status_code=404, detail="Guest not found")
+    
+    guest_name = f"{guest.name} {guest.surname}"
+    old_values = {
+        "name": guest.name,
+        "surname": guest.surname,
+        "email": guest.email,
+        "phone_number": guest.phone_number
+    }
+    
+    success = GuestService.delete_guest(db, guest_id)
+    
+    # Log audit
+    log_audit(
+        db=db,
+        user=current_user,
+        action="DELETE",
+        entity_type="guest",
+        entity_id=guest_id,
+        description=f"Deleted guest {guest_name}",
+        old_values=old_values,
+        request=request
+    )
+    
     return {"detail": "Guest deleted"}
