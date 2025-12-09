@@ -71,7 +71,8 @@ function renderRoomItem(r) {
 async function listRooms() {
   showMessage("rooms-message", "");
   try {
-    const response = await listRoomsAPI();
+    const search = document.getElementById("room-search")?.value || '';
+    const response = await listRoomsAPI(1, 50, search);
     const rooms = response.items || response; // Handle both paginated and non-paginated
     const tbody = document.getElementById("room-list");
     tbody.innerHTML = "";
@@ -183,7 +184,8 @@ function renderGuestItem(g) {
 async function listGuests() {
   showMessage("guests-message", "");
   try {
-    const response = await listGuestsAPI();
+    const search = document.getElementById("guest-search")?.value || '';
+    const response = await listGuestsAPI(1, 50, search);
     const guests = response.items || response;
     const tbody = document.getElementById("guest-list");
     tbody.innerHTML = "";
@@ -290,7 +292,8 @@ function renderBookingItem(b) {
 async function listBookings() {
   showMessage("bookings-message", "");
   try {
-    const response = await listBookingsAPI();
+    const search = document.getElementById("booking-search")?.value || '';
+    const response = await listBookingsAPI(1, 50, search);
     const bookings = response.items || response;
     const tbody = document.getElementById("booking-list");
     tbody.innerHTML = "";
@@ -375,7 +378,8 @@ async function createPayment() {
 async function listPayments() {
   showMessage('payments-message', '');
   try {
-    const response = await listPaymentsAPI();
+    const status = document.getElementById('payment-search')?.value || '';
+    const response = await listPaymentsAPI(1, 50, status);
     const payments = response.items || response;
     const tbody = document.getElementById('payment-list');
     tbody.innerHTML = '';
@@ -449,7 +453,8 @@ async function listPayments() {
 async function listInvoices() {
   showMessage('invoices-message', '');
   try {
-    const response = await listInvoicesAPI();
+    const search = document.getElementById('invoice-search')?.value || '';
+    const response = await listInvoicesAPI(1, 50, search);
     const invoices = response.items || response;
     const tbody = document.getElementById('invoice-list');
     tbody.innerHTML = '';

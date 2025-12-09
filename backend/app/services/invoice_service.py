@@ -23,10 +23,23 @@ except ImportError:
 
 class InvoiceService:
     @staticmethod
-    def list_invoices(db: Session, page: int = 1, page_size: int = 50,
+    def list_invoices(db: Session, page: int = 1, page_size: int = 50, search: Optional[str] = None,
                      sort_by: Optional[str] = None, sort_order: str = "desc"):
-        """List invoices with pagination"""
+        """List invoices with pagination and search"""
         query = db.query(models.Invoice)
+        
+        # Apply search filter
+        if search:
+            # Search by invoice number or booking ID
+            try:
+                booking_id = int(search)
+                query = query.filter(
+                    (models.Invoice.invoice_number.ilike(f"%{search}%")) |
+                    (models.Invoice.booking_id == booking_id)
+                )
+            except ValueError:
+                # Not a number, search only by invoice number
+                query = query.filter(models.Invoice.invoice_number.ilike(f"%{search}%"))
         
         # Apply sorting (default to issued_at desc)
         if not sort_by:

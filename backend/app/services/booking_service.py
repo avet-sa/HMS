@@ -84,7 +84,8 @@ class BookingService:
     @staticmethod
     def list_bookings(db: Session, current_user: models.User = None, page: int = 1, page_size: int = 50,
                      status: Optional[str] = None, check_in_from: Optional[date] = None,
-                     check_in_to: Optional[date] = None, sort_by: Optional[str] = None, sort_order: str = "desc"):
+                     check_in_to: Optional[date] = None, search: Optional[str] = None,
+                     sort_by: Optional[str] = None, sort_order: str = "desc"):
         """
         List bookings with role-based filtering:
         - ADMIN, MANAGER: see all bookings
@@ -103,6 +104,16 @@ class BookingService:
             query = query.filter(models.Booking.check_in >= check_in_from)
         if check_in_to:
             query = query.filter(models.Booking.check_in <= check_in_to)
+        if search:
+            # Search by guest name or booking number
+            from sqlalchemy import or_
+            query = query.filter(
+                or_(
+                    models.Booking.booking_number.ilike(f"%{search}%"),
+                    models.Booking.guest.has(models.Guest.name.ilike(f"%{search}%")),
+                    models.Booking.guest.has(models.Guest.surname.ilike(f"%{search}%"))
+                )
+            )
         
         # Apply sorting (default to created_at desc)
         if not sort_by:

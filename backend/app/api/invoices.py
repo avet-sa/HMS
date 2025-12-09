@@ -16,13 +16,14 @@ router = APIRouter(prefix="/invoices")
 def list_invoices(
     page: int = Query(1, ge=1, description="Page number"),
     page_size: int = Query(50, ge=1, le=100, description="Items per page"),
+    search: Optional[str] = Query(None, description="Search by invoice number or booking ID"),
     sort_by: Optional[str] = Query(None, description="Sort by field"),
     sort_order: str = Query("desc", regex="^(asc|desc)$", description="Sort order"),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(require_role(models.PermissionLevel.REGULAR, models.PermissionLevel.MANAGER, models.PermissionLevel.ADMIN))
 ):
     """List all invoices (accessible to all authenticated users)"""
-    return InvoiceService.list_invoices(db, page, page_size, sort_by, sort_order)
+    return InvoiceService.list_invoices(db, page, page_size, search, sort_by, sort_order)
 
 @router.post("/{booking_id}", response_model=InvoiceResponse)
 def generate_invoice(booking_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(require_role(models.PermissionLevel.ADMIN, models.PermissionLevel.MANAGER))):

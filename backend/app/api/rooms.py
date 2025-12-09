@@ -26,12 +26,13 @@ def list_rooms(
     page_size: int = Query(50, ge=1, le=100, description="Items per page"),
     status: Optional[str] = Query(None, description="Filter by status"),
     room_type_id: Optional[int] = Query(None, description="Filter by room type"),
+    search: Optional[str] = Query(None, description="Search by room number"),
     sort_by: Optional[str] = Query(None, description="Sort by field (e.g., number, price_per_night)"),
     sort_order: str = Query("asc", regex="^(asc|desc)$", description="Sort order"),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    return RoomService.list_rooms(db, page, page_size, status, room_type_id, sort_by, sort_order)
+    return RoomService.list_rooms(db, page, page_size, status, room_type_id, search, sort_by, sort_order)
 
 @router.get("/{room_id}", response_model=RoomResponse)
 def get_room(

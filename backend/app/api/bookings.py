@@ -31,12 +31,13 @@ def list_bookings(
     status: Optional[str] = Query(None, description="Filter by status"),
     check_in_from: Optional[date] = Query(None, description="Filter check-in from date"),
     check_in_to: Optional[date] = Query(None, description="Filter check-in to date"),
+    search: Optional[str] = Query(None, description="Search by guest name or booking number"),
     sort_by: Optional[str] = Query(None, description="Sort by field"),
     sort_order: str = Query("desc", regex="^(asc|desc)$", description="Sort order"),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    return BookingService.list_bookings(db, current_user, page, page_size, status, check_in_from, check_in_to, sort_by, sort_order)
+    return BookingService.list_bookings(db, current_user, page, page_size, status, check_in_from, check_in_to, search, sort_by, sort_order)
 
 @router.get("/{booking_id}", response_model=BookingResponse)
 def get_booking(

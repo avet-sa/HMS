@@ -32,6 +32,24 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-refresh-invoices").addEventListener("click", listInvoices);
   document.getElementById("btn-generate-invoice").addEventListener("click", generateInvoice);
 
+  // Search inputs - trigger search on input with debounce
+  let searchTimeout;
+  const setupSearchInput = (inputId, listFunction) => {
+    const input = document.getElementById(inputId);
+    if (input) {
+      input.addEventListener("input", () => {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => listFunction(), 300);
+      });
+    }
+  };
+
+  setupSearchInput("room-search", listRooms);
+  setupSearchInput("guest-search", listGuests);
+  setupSearchInput("booking-search", listBookings);
+  setupSearchInput("payment-search", listPayments);
+  setupSearchInput("invoice-search", listInvoices);
+
   // Reports buttons
   document.getElementById('btn-occupancy-report').addEventListener('click', fetchOccupancyReport);
   document.getElementById('btn-revenue-report').addEventListener('click', fetchRevenueReport);

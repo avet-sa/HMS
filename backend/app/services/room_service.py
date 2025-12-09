@@ -30,7 +30,8 @@ class RoomService:
 
     @staticmethod
     def list_rooms(db: Session, page: int = 1, page_size: int = 50, status: Optional[str] = None, 
-                   room_type_id: Optional[int] = None, sort_by: Optional[str] = None, sort_order: str = "asc"):
+                   room_type_id: Optional[int] = None, search: Optional[str] = None, 
+                   sort_by: Optional[str] = None, sort_order: str = "asc"):
         query = db.query(models.Room)
         
         # Apply filters
@@ -38,6 +39,8 @@ class RoomService:
             query = query.filter(models.Room.maintenance_status == status)
         if room_type_id:
             query = query.filter(models.Room.room_type_id == room_type_id)
+        if search:
+            query = query.filter(models.Room.number.ilike(f"%{search}%"))
         
         # Apply sorting
         query = apply_sorting(query, models.Room, sort_by, sort_order)
