@@ -53,9 +53,11 @@ A comprehensive, full-featured hotel management system built with **Python FastA
 
 ### **Frontend**
 - **HTML5** – Semantic markup
-- **CSS3** – Dark/light theme toggle with localStorage persistence
-- **Vanilla JavaScript (ES6+)** – No dependencies; centralized `apiFetch` helper with Bearer token auth
+- **CSS3** – Dark/light theme toggle with localStorage persistence, responsive table-based layouts
+- **Vanilla JavaScript (ES6+)** – Modularized architecture (7 separate modules: config, utils, theme, api, auth, ui, reports, app)
+- **UI Components** – Table-based data display with badges, action buttons, and sortable columns
 - **Forms** – Tab-based UI for rooms, guests, bookings, payments, and reports
+- **Admin Panel** – User management with 3-tier permission system (REGULAR, MANAGER, ADMIN) and activation controls
 
 ### **Database (Development & Test)**
 - **SQLite** (in-memory for tests)
@@ -133,11 +135,19 @@ HMS1/
 │           └── 006_cancellation_policies.py
 ├── frontend/
 │   ├── index.html                    # Main dashboard (auth, rooms, guests, bookings, payments, reports)
-│   ├── admin.html                    # Admin panel (user management)
-│   ├── styles.css                    # Dark/light theme, responsive layout
+│   ├── admin.html                    # Admin panel (user management with permission controls)
+│   ├── styles.css                    # Dark/light theme, responsive table layouts, badge components
+│   ├── admin.css                     # Admin panel specific styles
 │   └── js/
-│       ├── app.js                    # Central app logic (apiFetch, auth, CRUD handlers)
-│       └── admin.js                  # Admin user management
+│       ├── config.js                 # API base URL configuration
+│       ├── utils.js                  # Utility functions (showMessage, formatters)
+│       ├── theme.js                  # Dark/light theme toggle logic
+│       ├── api.js                    # API client with Bearer token auth (apiFetch)
+│       ├── auth.js                   # Authentication & user context
+│       ├── ui.js                     # CRUD UI rendering (table rows, badges)
+│       ├── reports.js                # Report generation and chart rendering
+│       ├── app.js                    # Main application initialization
+│       └── admin.js                  # Admin user management (permission cycling, activation)
 ├── tests/
 │   ├── conftest.py                   # Pytest fixtures (client, admin_headers, regular_headers, db)
 │   ├── test_auth_users.py            # Authentication & user endpoints
@@ -179,7 +189,7 @@ Represents staff/admin users with role-based permissions.
 | id | Integer | PK | User ID |
 | username | String(50) | UNIQUE, NOT NULL | Login username |
 | password_hash | String | NOT NULL | bcrypt hash |
-| permission_level | ENUM | NOT NULL, DEFAULT=REGULAR | REGULAR \| MANAGER \| ADMIN |
+| permission_level | ENUM | NOT NULL, DEFAULT=REGULAR | REGULAR \| MANAGER \| ADMIN (3-tier RBAC) |
 | is_active | Boolean | DEFAULT=True | Account status |
 | created_at | DateTime | DEFAULT=now() | Account creation timestamp |
 | updated_at | DateTime | onupdate=now() | Last modification timestamp |
@@ -480,14 +490,23 @@ Defines refund tiers based on days before check-in.
 1. **Register as first admin:**
    - Go to `frontend/index.html` → Sign In → Create Account
    - Use any username/password (create account as REGULAR by default)
-   - Manually set `permission_level='ADMIN'` in database or admin panel
+   - Access Admin Panel (⚡ Admin button in header)
+   - First registered user can be promoted to ADMIN via admin panel by cycling permissions
 
-2. **Create room types:**
+2. **Manage users (Admin Panel):**
+   - View all users with ID, username, permission level, status, and creation date
+   - Cycle user permissions: REGULAR → MANAGER → ADMIN → REGULAR
+   - Activate/deactivate user accounts
+   - View user statistics (Total, Admins, Managers, Active)
+
+3. **Create room types:**
    - Dashboard → Rooms tab → Form (requires MANAGER/ADMIN role)
    - Input: Type name, base price, capacity
 
-3. **Add rooms:**
+4. **Add rooms:**
    - Dashboard → Rooms tab → Add New Room
+   - View rooms in table with: ID, Room #, Type, Price/Night, Size, Max Guests, Floor, Status
+   - Delete rooms with confirmation dialog
    - Assign type, price, floor, square meters
 
 4. **Register guests:**
@@ -526,9 +545,74 @@ Defines refund tiers based on days before check-in.
 
 ## Core Features
 
-### **1. Role-Based Access Control (RBAC)**
-- **REGULAR:** Basic user – can create own bookings, view own data
-- **MANAGER:** Staff – can confirm/check-in/check-out, process payments, view all data
+### **1. User Management & RBAC**
+- **Three-tier permission system:**
+  - **REGULAR** – Basic users (view own data)
+  - **MANAGER** – Staff level (create/modify bookings, payments, guests)
+  - **ADMIN** – Full system access (user management, all CRUD operations)
+- **Admin Panel:**
+  - Table-based user listing with sortable columns
+  - Permission cycling via button (REGULAR → MANAGER → ADMIN → REGULAR)
+  - User activation/deactivation toggle
+  - Real-time user statistics (Total, Admins, Managers, Active)
+- **JWT-based authentication** with Bearer tokens
+- **bcrypt password hashing** for security
+
+### **2. Room & Booking Management**
+- **Table-based UI** with enhanced columns:
+  - Rooms: ID, Room #, Type, Price/Night, Size (m²), Max Guests, Floor, Status
+  - Bookings: ID, Guest, Room, Check-in, Check-out, Nights, Total Price, Status
+  - Status badges with color coding (green=confirmed, blue=checked in, amber=pending)
+- **Room availability checking** across date ranges
+- **Booking lifecycle:**
+  ```
+  PENDING → CONFIRMED → CHECKED_IN → CHECKED_OUT
+       or ↓              or ↓
+  CANCELLED (refund)    NO_SHOW (penalty)
+  ```
+
+### **3. Guest Management**
+- **Enhanced guest table** with columns:
+  - ID, Name, Email, Phone, Registration Date, Total Bookings
+- Guest profile tracking with loyalty points and VIP tiers
+- Soft delete support (is_active flag)
+
+### **4. Payment & Invoice System**
+- **Payment table** with detailed tracking:
+  - ID, Booking, Amount, Currency, Method, Reference, Date, Status
+- **Smart badge colors:**
+  - Green = paid/completed
+  - Amber = pending/processing
+  - Blue = refunded
+  - Red = failed/declined/canceled
+- Auto-generate invoice on payment completion
+- Prevent overpayments with validation
+- Support for multiple payment methods (card, cash, bank transfer, online)
+
+### **5. Reporting & Analytics**
+- **Occupancy Report:** Daily occupancy rates with line chart visualization (520px height)
+- **Revenue Report:** Daily revenue trends with aggregation for large date ranges (520px height)
+- **Trends Report:** Booking patterns, cancellation rates, average stay duration (420px height, 80% width)
+- **Interactive charts** with Chart.js
+- **Export functionality** for all report types
+
+### **6. UI/UX Features**
+- **Dark/light theme toggle** with localStorage persistence
+- **Responsive table layouts** with horizontal scrolling
+- **Badge system** with transparent backgrounds and bullet indicators
+- **90% base font size** for optimal information density
+- **Modular JavaScript architecture:**
+  - config.js – API configuration
+  - utils.js – Utility functions
+  - theme.js – Theme management
+  - api.js – HTTP client with auth
+  - auth.js – Authentication logic
+  - ui.js – CRUD rendering
+  - reports.js – Chart generation
+  - app.js – Application initialization
+  - admin.js – User management
+
+### **7. Cancellation & Refund Policies**
 - **ADMIN:** Full system access – user management, deletions, role changes
 
 Enforced via `@require_role(PermissionLevel.ADMIN, PermissionLevel.MANAGER)` dependency.
