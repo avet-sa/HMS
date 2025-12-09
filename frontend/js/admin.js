@@ -286,9 +286,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("btn-create-user")?.addEventListener("click", createUser);
     document.getElementById("create-user-form")?.addEventListener("submit", (e) => e.preventDefault());
 
+    // Audit logs event listeners
+    document.getElementById("btn-refresh-logs")?.addEventListener("click", () => loadAuditLogs(currentLogsPage));
+    document.getElementById("btn-apply-log-filters")?.addEventListener("click", applyLogFilters);
+
     const isAuthorized = await checkAuth();
     if (isAuthorized) {
         await loadUsers();
+        await loadAuditLogs();
     }
 });
 
@@ -305,11 +310,11 @@ let logsFilters = {
 };
 
 async function loadAuditLogs(page = 1) {
-    const token = localStorage.getItem('access_token');
+    const token = localStorage.getItem('authToken');
     if (!token) return;
 
     try {
-        let url = `${API_BASE_URL}/audit-logs/?page=${page}&page_size=50`;
+        let url = `${API_URL}/audit-logs/?page=${page}&page_size=50`;
         
         // Apply filters
         if (logsFilters.action) url += `&action=${logsFilters.action}`;
@@ -331,11 +336,9 @@ async function loadAuditLogs(page = 1) {
         displayAuditLogs(data.items || []);
         updateLogsPagination(data.page || 1, data.total_pages || 1);
         currentLogsPage = page;
-
-        showMessage('logs-message', 'Audit logs loaded successfully', 'success');
     } catch (error) {
         console.error('Error loading audit logs:', error);
-        showMessage('logs-message', 'Failed to load audit logs', 'error');
+        showMessage('logs-message', `Failed to load audit logs: ${error.message}`, true);
     }
 }
 
@@ -407,22 +410,3 @@ function applyLogFilters() {
     
     loadAuditLogs(1);
 }
-
-// Event listeners for audit logs
-document.addEventListener('DOMContentLoaded', function() {
-    const btnRefreshLogs = document.getElementById('btn-refresh-logs');
-    const btnApplyFilters = document.getElementById('btn-apply-log-filters');
-    
-    if (btnRefreshLogs) {
-        btnRefreshLogs.addEventListener('click', () => loadAuditLogs(currentLogsPage));
-    }
-    
-    if (btnApplyFilters) {
-        btnApplyFilters.addEventListener('click', applyLogFilters);
-    }
-    
-    // Load audit logs if admin panel is visible
-    if (document.getElementById('admin-panel').style.display !== 'none') {
-        loadAuditLogs();
-    }
-});

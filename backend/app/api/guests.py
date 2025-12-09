@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from ..db.session import get_db
 from ..db import models
-from ..schemas.guest import GuestCreate, GuestResponse
+from ..schemas.guest import GuestCreate, GuestResponse, GuestUpdate
 from ..services.guest_service import GuestService
 from ..dependencies.security import require_role
 from ..core.security import get_current_user

@@ -122,8 +122,7 @@ def delete_room(
     old_values = {
         "number": room.number,
         "room_type_id": room.room_type_id,
-        "price_per_night": str(room.price_per_night),
-        "status": room.status.value if room.status else None
+        "price_per_night": str(room.price_per_night)
     }
     
     success = RoomService.delete_room(db, room_id)
