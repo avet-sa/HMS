@@ -1,4 +1,7 @@
 import uvicorn
+import signal
+import asyncio
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -7,18 +10,38 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from fastapi.responses import JSONResponse
 import os
+import logging
 
 # Import routers
 from backend.app.api import reports, rooms, guests, bookings, auth, room_types, users, payments, invoices
 
-# import logging
-# logging.basicConfig(level=logging.INFO)
-# logger = logging.getLogger(__name__)
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Graceful shutdown flag
+shutdown_event = asyncio.Event()
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage application lifespan with graceful startup and shutdown"""
+    # Startup
+    logger.info("Starting Hotel Management System API...")
+    yield
+    # Shutdown
+    logger.info("Initiating graceful shutdown...")
+    shutdown_event.set()
+    # Give in-flight requests time to complete
+    await asyncio.sleep(2)
+    logger.info("Shutdown complete")
+
 
 app = FastAPI(
     title="Hotel Management System",
     description="Backend API for a full-featured hotel management system",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 # Configure rate limiting
@@ -74,5 +97,35 @@ if os.path.exists("frontend"):
 def root():
     return {"message": "Welcome to the Hotel Management System API"}
 
+
+# Health check endpoint
+@app.get("/health")
+def health_check():
+    """Health check endpoint for monitoring and load balancers"""
+    if shutdown_event.is_set():
+        return JSONResponse(
+            status_code=503,
+            content={"status": "shutting_down", "message": "Server is shutting down"}
+        )
+    return {"status": "healthy", "message": "Service is running"}
+
+
+def handle_shutdown(signum, frame):
+    """Handle shutdown signals gracefully"""
+    logger.info(f"Received signal {signum}, initiating graceful shutdown...")
+    shutdown_event.set()
+
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Register signal handlers for graceful shutdown
+    signal.signal(signal.SIGTERM, handle_shutdown)
+    signal.signal(signal.SIGINT, handle_shutdown)
+    
+    logger.info("Starting uvicorn server with graceful shutdown support...")
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=8000,
+        log_level="info",
+        timeout_graceful_shutdown=10,  # Give 10 seconds for graceful shutdown
+    )

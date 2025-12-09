@@ -95,7 +95,7 @@
 - [x] Environment variables for secrets
 - [x] Database migrations with Alembic
 - [x] Health check endpoints
-- [ ] Graceful shutdown handling
+- [x] Graceful shutdown handling (SIGTERM/SIGINT with 10s timeout)
 - [x] Rate limiting (slowapi)
 - [x] CORS configuration
 
