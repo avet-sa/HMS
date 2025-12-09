@@ -3,11 +3,13 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from uuid import uuid4
 from io import BytesIO
+from typing import Optional
 
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
 
 from ..db import models
+from ..utils.pagination import paginate, apply_sorting
 
 try:
     from reportlab.lib.pagesizes import letter
@@ -20,6 +22,20 @@ except ImportError:
 
 
 class InvoiceService:
+    @staticmethod
+    def list_invoices(db: Session, page: int = 1, page_size: int = 50,
+                     sort_by: Optional[str] = None, sort_order: str = "desc"):
+        """List invoices with pagination"""
+        query = db.query(models.Invoice)
+        
+        # Apply sorting (default to issued_at desc)
+        if not sort_by:
+            sort_by = "issued_at"
+        query = apply_sorting(query, models.Invoice, sort_by, sort_order)
+        
+        # Apply pagination
+        return paginate(query, page, page_size)
+    
     @staticmethod
     def generate_invoice(db: Session, booking_id: int) -> models.Invoice:
         booking = db.query(models.Booking).filter(models.Booking.id == booking_id).first()

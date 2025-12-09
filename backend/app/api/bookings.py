@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
+from datetime import date
 
 from backend.app.db.session import get_db
 from backend.app.db import models
@@ -8,6 +9,7 @@ from backend.app.schemas.booking import BookingCreate, BookingUpdate, BookingRes
 from backend.app.services.booking_service import BookingService
 from backend.app.dependencies.security import require_role
 from backend.app.core.security import get_current_user
+from backend.app.utils.pagination import PaginatedResponse
 
 router = APIRouter()
 
@@ -22,12 +24,19 @@ def create_booking(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/", response_model=List[BookingResponse])
+@router.get("/", response_model=PaginatedResponse[BookingResponse])
 def list_bookings(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(50, ge=1, le=100, description="Items per page"),
+    status: Optional[str] = Query(None, description="Filter by status"),
+    check_in_from: Optional[date] = Query(None, description="Filter check-in from date"),
+    check_in_to: Optional[date] = Query(None, description="Filter check-in to date"),
+    sort_by: Optional[str] = Query(None, description="Sort by field"),
+    sort_order: str = Query("desc", regex="^(asc|desc)$", description="Sort order"),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    return BookingService.list_bookings(db, current_user)
+    return BookingService.list_bookings(db, current_user, page, page_size, status, check_in_from, check_in_to, sort_by, sort_order)
 
 @router.get("/{booking_id}", response_model=BookingResponse)
 def get_booking(

@@ -1,11 +1,13 @@
 from uuid import uuid4
 
 from sqlalchemy.orm import Session, joinedload
-from datetime import datetime
+from datetime import datetime, date
+from typing import Optional
 from fastapi import HTTPException
 
 from ..db import models
 from ..utils.availability import is_room_available
+from ..utils.pagination import paginate, apply_sorting
 from ..schemas.booking import BookingCreate, BookingUpdate
 from .refund_policy import RefundPolicyService
 
@@ -80,7 +82,9 @@ class BookingService:
         )
 
     @staticmethod
-    def list_bookings(db: Session, current_user: models.User = None):
+    def list_bookings(db: Session, current_user: models.User = None, page: int = 1, page_size: int = 50,
+                     status: Optional[str] = None, check_in_from: Optional[date] = None,
+                     check_in_to: Optional[date] = None, sort_by: Optional[str] = None, sort_order: str = "desc"):
         """
         List bookings with role-based filtering:
         - ADMIN, MANAGER: see all bookings
@@ -92,7 +96,21 @@ class BookingService:
         if current_user and current_user.permission_level == models.PermissionLevel.REGULAR:
             query = query.filter(models.Booking.created_by == current_user.id)
         
-        return query.all()
+        # Apply filters
+        if status:
+            query = query.filter(models.Booking.status == status)
+        if check_in_from:
+            query = query.filter(models.Booking.check_in >= check_in_from)
+        if check_in_to:
+            query = query.filter(models.Booking.check_in <= check_in_to)
+        
+        # Apply sorting (default to created_at desc)
+        if not sort_by:
+            sort_by = "created_at"
+        query = apply_sorting(query, models.Booking, sort_by, sort_order)
+        
+        # Apply pagination
+        return paginate(query, page, page_size)
 
     @staticmethod
     def update_booking(db: Session, booking_id: int, data: BookingUpdate):

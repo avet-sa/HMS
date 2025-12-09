@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
+from typing import Optional
 from ..db import models
 from ..schemas.room import RoomCreate, RoomUpdate
+from ..utils.pagination import paginate, apply_sorting
 
 
 class RoomService:
@@ -27,8 +29,21 @@ class RoomService:
         return db.query(models.Room).filter(models.Room.id == room_id).first()
 
     @staticmethod
-    def list_rooms(db: Session):
-        return db.query(models.Room).all()
+    def list_rooms(db: Session, page: int = 1, page_size: int = 50, status: Optional[str] = None, 
+                   room_type_id: Optional[int] = None, sort_by: Optional[str] = None, sort_order: str = "asc"):
+        query = db.query(models.Room)
+        
+        # Apply filters
+        if status:
+            query = query.filter(models.Room.maintenance_status == status)
+        if room_type_id:
+            query = query.filter(models.Room.room_type_id == room_type_id)
+        
+        # Apply sorting
+        query = apply_sorting(query, models.Room, sort_by, sort_order)
+        
+        # Apply pagination
+        return paginate(query, page, page_size)
 
     @staticmethod
     def update_room(db: Session, room_id: int, data: RoomUpdate):

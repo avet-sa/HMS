@@ -50,8 +50,8 @@
 - [x] Use proper HTTP verbs (GET, POST, PUT, PATCH, DELETE)
 - [x] Consistent naming: `/bookings`, `/rooms`, `/guests`, `/payments`
 - [x] Proper status codes (200, 201, 400, 401, 403, 404, 500)
-- [ ] Pagination for list endpoints
-- [ ] Filtering and sorting support
+- [x] Pagination for list endpoints (page, page_size params with PaginatedResponse)
+- [x] Filtering and sorting support (status, dates, search queries)
 
 ### 16.2. Response Format
 

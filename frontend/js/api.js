@@ -19,8 +19,8 @@ async function apiFetch(path, opts = {}) {
 }
 
 // Room API calls
-async function listRoomsAPI() {
-  return await apiFetch('/rooms/');
+async function listRoomsAPI(page = 1, page_size = 50) {
+  return await apiFetch(`/rooms/?page=${page}&page_size=${page_size}`);
 }
 
 async function createRoomAPI(number, room_type_id, price_per_night, square_meters, floor) {
@@ -40,8 +40,8 @@ async function listRoomTypesAPI() {
 }
 
 // Guest API calls
-async function listGuestsAPI() {
-  return await apiFetch('/guests/');
+async function listGuestsAPI(page = 1, page_size = 50) {
+  return await apiFetch(`/guests/?page=${page}&page_size=${page_size}`);
 }
 
 async function createGuestAPI(name, surname, email) {
@@ -56,8 +56,8 @@ async function deleteGuestAPI(id) {
 }
 
 // Booking API calls
-async function listBookingsAPI() {
-  return await apiFetch('/bookings/');
+async function listBookingsAPI(page = 1, page_size = 50) {
+  return await apiFetch(`/bookings/?page=${page}&page_size=${page_size}&sort_order=desc`);
 }
 
 async function createBookingAPI(guest_id, room_id, check_in, check_out) {
@@ -72,8 +72,8 @@ async function cancelBookingAPI(id) {
 }
 
 // Payment API calls
-async function listPaymentsAPI() {
-  return await apiFetch('/payments/');
+async function listPaymentsAPI(page = 1, page_size = 50) {
+  return await apiFetch(`/payments/?page=${page}&page_size=${page_size}&sort_order=desc`);
 }
 
 async function createPaymentAPI(booking_id, amount, currency = 'USD', method = 'card') {
@@ -97,8 +97,8 @@ async function fetchTrendsReportAPI(start_date, end_date) {
 }
 
 // Invoice API calls
-async function listInvoicesAPI() {
-  return await apiFetch('/invoices/');
+async function listInvoicesAPI(page = 1, page_size = 50) {
+  return await apiFetch(`/invoices/?page=${page}&page_size=${page_size}&sort_order=desc`);
 }
 
 async function generateInvoiceAPI(booking_id) {

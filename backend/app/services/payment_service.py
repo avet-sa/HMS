@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from ..db import models
+from ..utils.pagination import paginate, apply_sorting
 
 
 class PaymentService:
@@ -109,7 +110,8 @@ class PaymentService:
         return payment
 
     @staticmethod
-    def list_payments(db: Session, current_user: models.User) -> List[models.Payment]:
+    def list_payments(db: Session, current_user: models.User, page: int = 1, page_size: int = 50,
+                     status: Optional[str] = None, sort_by: Optional[str] = None, sort_order: str = "desc"):
         """
         List payments with RBAC logic:
         - ADMIN/MANAGER: see all payments
@@ -117,9 +119,21 @@ class PaymentService:
         """
         if current_user.permission_level in (models.PermissionLevel.ADMIN, models.PermissionLevel.MANAGER):
             # Admin/Manager can see all payments
-            return db.query(models.Payment).all()
+            query = db.query(models.Payment)
         else:
             # REGULAR users only see payments for bookings they created
-            return db.query(models.Payment).join(
+            query = db.query(models.Payment).join(
                 models.Booking, models.Payment.booking_id == models.Booking.id
-            ).filter(models.Booking.created_by == current_user.id).all()
+            ).filter(models.Booking.created_by == current_user.id)
+        
+        # Apply filters
+        if status:
+            query = query.filter(models.Payment.status == status)
+        
+        # Apply sorting (default to created_at desc)
+        if not sort_by:
+            sort_by = "created_at"
+        query = apply_sorting(query, models.Payment, sort_by, sort_order)
+        
+        # Apply pagination
+        return paginate(query, page, page_size)

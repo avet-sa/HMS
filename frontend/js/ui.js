@@ -71,7 +71,8 @@ function renderRoomItem(r) {
 async function listRooms() {
   showMessage("rooms-message", "");
   try {
-    const rooms = await listRoomsAPI();
+    const response = await listRoomsAPI();
+    const rooms = response.items || response; // Handle both paginated and non-paginated
     const tbody = document.getElementById("room-list");
     tbody.innerHTML = "";
     if (rooms && rooms.length > 0) {
@@ -182,7 +183,8 @@ function renderGuestItem(g) {
 async function listGuests() {
   showMessage("guests-message", "");
   try {
-    const guests = await listGuestsAPI();
+    const response = await listGuestsAPI();
+    const guests = response.items || response;
     const tbody = document.getElementById("guest-list");
     tbody.innerHTML = "";
     if (guests && guests.length > 0) {
@@ -288,7 +290,8 @@ function renderBookingItem(b) {
 async function listBookings() {
   showMessage("bookings-message", "");
   try {
-    const bookings = await listBookingsAPI();
+    const response = await listBookingsAPI();
+    const bookings = response.items || response;
     const tbody = document.getElementById("booking-list");
     tbody.innerHTML = "";
     if (bookings && bookings.length > 0) {
@@ -372,7 +375,8 @@ async function createPayment() {
 async function listPayments() {
   showMessage('payments-message', '');
   try {
-    const payments = await listPaymentsAPI();
+    const response = await listPaymentsAPI();
+    const payments = response.items || response;
     const tbody = document.getElementById('payment-list');
     tbody.innerHTML = '';
     if (payments && payments.length > 0) {
@@ -445,7 +449,8 @@ async function listPayments() {
 async function listInvoices() {
   showMessage('invoices-message', '');
   try {
-    const invoices = await listInvoicesAPI();
+    const response = await listInvoicesAPI();
+    const invoices = response.items || response;
     const tbody = document.getElementById('invoice-list');
     tbody.innerHTML = '';
     if (invoices && invoices.length > 0) {

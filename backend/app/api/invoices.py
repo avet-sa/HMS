@@ -1,21 +1,28 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from ..db.session import get_db
 from ..dependencies.security import require_role
 from ..db import models
 from ..schemas.invoice import InvoiceResponse
 from ..services.invoice_service import InvoiceService
+from ..utils.pagination import PaginatedResponse
 
 router = APIRouter(prefix="/invoices")
 
-@router.get("/", response_model=List[InvoiceResponse])
-def list_invoices(db: Session = Depends(get_db), current_user: models.User = Depends(require_role(models.PermissionLevel.REGULAR, models.PermissionLevel.MANAGER, models.PermissionLevel.ADMIN))):
+@router.get("/", response_model=PaginatedResponse[InvoiceResponse])
+def list_invoices(
+    page: int = Query(1, ge=1, description="Page number"),
+    page_size: int = Query(50, ge=1, le=100, description="Items per page"),
+    sort_by: Optional[str] = Query(None, description="Sort by field"),
+    sort_order: str = Query("desc", regex="^(asc|desc)$", description="Sort order"),
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(require_role(models.PermissionLevel.REGULAR, models.PermissionLevel.MANAGER, models.PermissionLevel.ADMIN))
+):
     """List all invoices (accessible to all authenticated users)"""
-    invoices = db.query(models.Invoice).all()
-    return invoices
+    return InvoiceService.list_invoices(db, page, page_size, sort_by, sort_order)
 
 @router.post("/{booking_id}", response_model=InvoiceResponse)
 def generate_invoice(booking_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(require_role(models.PermissionLevel.ADMIN, models.PermissionLevel.MANAGER))):
