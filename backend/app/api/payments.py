@@ -19,7 +19,7 @@ def list_payments(
     page_size: int = Query(50, ge=1, le=100, description="Items per page"),
     status: Optional[str] = Query(None, description="Filter by payment status"),
     sort_by: Optional[str] = Query(None, description="Sort by field"),
-    sort_order: str = Query("desc", regex="^(asc|desc)$", description="Sort order"),
+    sort_order: str = Query("desc", pattern="^(asc|desc)$", description="Sort order"),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):

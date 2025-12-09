@@ -28,7 +28,7 @@ def list_rooms(
     room_type_id: Optional[int] = Query(None, description="Filter by room type"),
     search: Optional[str] = Query(None, description="Search by room number"),
     sort_by: Optional[str] = Query(None, description="Sort by field (e.g., number, price_per_night)"),
-    sort_order: str = Query("asc", regex="^(asc|desc)$", description="Sort order"),
+    sort_order: str = Query("asc", pattern="^(asc|desc)$", description="Sort order"),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):

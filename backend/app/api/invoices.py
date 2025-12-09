@@ -18,7 +18,7 @@ def list_invoices(
     page_size: int = Query(50, ge=1, le=100, description="Items per page"),
     search: Optional[str] = Query(None, description="Search by invoice number or booking ID"),
     sort_by: Optional[str] = Query(None, description="Sort by field"),
-    sort_order: str = Query("desc", regex="^(asc|desc)$", description="Sort order"),
+    sort_order: str = Query("desc", pattern="^(asc|desc)$", description="Sort order"),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(require_role(models.PermissionLevel.REGULAR, models.PermissionLevel.MANAGER, models.PermissionLevel.ADMIN))
 ):

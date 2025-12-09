@@ -26,7 +26,7 @@ def list_guests(
     page_size: int = Query(50, ge=1, le=100, description="Items per page"),
     search: Optional[str] = Query(None, description="Search by name, email, or phone"),
     sort_by: Optional[str] = Query(None, description="Sort by field"),
-    sort_order: str = Query("asc", regex="^(asc|desc)$", description="Sort order"),
+    sort_order: str = Query("asc", pattern="^(asc|desc)$", description="Sort order"),
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):

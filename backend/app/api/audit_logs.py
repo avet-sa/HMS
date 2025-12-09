@@ -6,12 +6,12 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
-from app.db.session import get_db
-from app.db.models import AuditLog, User
-from app.schemas.audit_log import AuditLogResponse
-from app.utils.pagination import paginate, apply_sorting, PaginatedResponse
-from app.dependencies.security import get_current_user
-from app.core.permissions import has_permission
+from ..db.session import get_db
+from ..db.models import AuditLog, User
+from ..schemas.audit_log import AuditLogResponse
+from ..utils.pagination import paginate, apply_sorting, PaginatedResponse
+from ..dependencies.security import get_current_user
+from ..core.permissions import require_admin_or_manager
 
 router = APIRouter(prefix="/audit-logs", tags=["Audit Logs"])
 
@@ -29,15 +29,14 @@ def list_audit_logs(
     date_from: Optional[datetime] = Query(None, description="Filter from date (ISO format)"),
     date_to: Optional[datetime] = Query(None, description="Filter to date (ISO format)"),
     sort_by: str = Query("created_at", description="Sort by field"),
-    sort_order: str = Query("desc", regex="^(asc|desc)$", description="Sort order")
+    sort_order: str = Query("desc", pattern="^(asc|desc)$", description="Sort order")
 ):
     """
     List all audit logs with filtering and pagination
     Requires: ADMIN or MANAGER role
     """
     # Check permission
-    if not has_permission(current_user, "manage_settings"):
-        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    require_admin_or_manager(current_user)
     
     # Build query
     query = db.query(AuditLog)
@@ -79,8 +78,7 @@ def get_audit_log(
     Requires: ADMIN or MANAGER role
     """
     # Check permission
-    if not has_permission(current_user, "manage_settings"):
-        raise HTTPException(status_code=403, detail="Insufficient permissions")
+    require_admin_or_manager(current_user)
     
     # Get audit log
     audit_log = db.query(AuditLog).filter(AuditLog.id == audit_log_id).first()
