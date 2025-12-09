@@ -68,69 +68,73 @@
                     </div>
                     <p id="logs-message" class="message" aria-live="polite"></p>
 
-                    <!-- Filters -->
-                    <div class="filters-panel">
-                        <div class="form-group">
-                            <label for="log-action-filter">Action</label>
-                            <select id="log-action-filter">
-                                <option value="">All Actions</option>
-                                <option value="CREATE">Create</option>
-                                <option value="UPDATE">Update</option>
-                                <option value="DELETE">Delete</option>
-                                <option value="LOGIN_SUCCESS">Login Success</option>
-                                <option value="LOGIN_FAILED">Login Failed</option>
-                                <option value="LOGOUT">Logout</option>
-                                <option value="CHECK_IN">Check In</option>
-                                <option value="CHECK_OUT">Check Out</option>
-                                <option value="CANCEL">Cancel</option>
-                                <option value="PROCESS">Process</option>
-                                <option value="REFUND">Refund</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="log-entity-filter">Entity Type</label>
-                            <select id="log-entity-filter">
-                                <option value="">All Types</option>
-                                <option value="booking">Booking</option>
-                                <option value="payment">Payment</option>
-                                <option value="user">User</option>
-                                <option value="room">Room</option>
-                                <option value="guest">Guest</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="log-date-from">From Date</label>
-                            <input type="date" id="log-date-from">
-                        </div>
-                        <div class="form-group">
-                            <label for="log-date-to">To Date</label>
-                            <input type="date" id="log-date-to">
-                        </div>
-                        <button id="btn-apply-log-filters" class="btn btn-primary">Apply Filters</button>
-                    </div>
+                    <div class="content-wrapper">
+                        <!-- Audit Logs Table -->
+                        <div class="users-table-panel">
+                            <h3>All Audit Logs</h3>
+                            <div class="table-wrapper">
+                                <table class="users-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Timestamp</th>
+                                            <th>User</th>
+                                            <th>Action</th>
+                                            <th>Entity</th>
+                                            <th>Entity ID</th>
+                                            <th>Description</th>
+                                            <th>IP Address</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="audit-logs-table-body">
+                                        <!-- Audit logs will be populated here -->
+                                    </tbody>
+                                </table>
+                            </div>
 
-                    <!-- Audit Logs Table -->
-                    <div class="table-wrapper">
-                        <table class="users-table">
-                            <thead>
-                                <tr>
-                                    <th>Timestamp</th>
-                                    <th>User</th>
-                                    <th>Action</th>
-                                    <th>Entity</th>
-                                    <th>Entity ID</th>
-                                    <th>Description</th>
-                                    <th>IP Address</th>
-                                </tr>
-                            </thead>
-                            <tbody id="audit-logs-table-body">
-                                <!-- Audit logs will be populated here -->
-                            </tbody>
-                        </table>
+                            <!-- Pagination -->
+                            <div id="logs-pagination" class="pagination"></div>
+                        </div>
+                        <!-- Filters -->
+                        <div class="form-panel">
+                            <div class="form-group">
+                                <label for="log-action-filter">Action</label>
+                                <select id="log-action-filter">
+                                    <option value="">All Actions</option>
+                                    <option value="CREATE">Create</option>
+                                    <option value="UPDATE">Update</option>
+                                    <option value="DELETE">Delete</option>
+                                    <option value="LOGIN_SUCCESS">Login Success</option>
+                                    <option value="LOGIN_FAILED">Login Failed</option>
+                                    <option value="LOGOUT">Logout</option>
+                                    <option value="CHECK_IN">Check In</option>
+                                    <option value="CHECK_OUT">Check Out</option>
+                                    <option value="CANCEL">Cancel</option>
+                                    <option value="PROCESS">Process</option>
+                                    <option value="REFUND">Refund</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="log-entity-filter">Entity Type</label>
+                                <select id="log-entity-filter">
+                                    <option value="">All Types</option>
+                                    <option value="booking">Booking</option>
+                                    <option value="payment">Payment</option>
+                                    <option value="user">User</option>
+                                    <option value="room">Room</option>
+                                    <option value="guest">Guest</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="log-date-from">From Date</label>
+                                <input type="date" id="log-date-from">
+                            </div>
+                            <div class="form-group">
+                                <label for="log-date-to">To Date</label>
+                                <input type="date" id="log-date-to">
+                            </div>
+                            <button id="btn-apply-log-filters" class="btn btn-primary">Apply Filters</button>
+                        </div>
                     </div>
-
-                    <!-- Pagination -->
-                    <div id="logs-pagination" class="pagination"></div>
                 </div>
 
                 <!-- User Management -->
