@@ -96,6 +96,29 @@ async function fetchTrendsReportAPI(start_date, end_date) {
   return await apiFetch(`/trends?start_date=${start_date}&end_date=${end_date}`);
 }
 
+// Invoice API calls
+async function listInvoicesAPI() {
+  return await apiFetch('/invoices/');
+}
+
+async function generateInvoiceAPI(booking_id) {
+  return await apiFetch(`/invoices/${booking_id}`, {
+    method: 'POST'
+  });
+}
+
+async function downloadInvoicePDFAPI(invoice_id) {
+  const headers = {};
+  if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
+  
+  const res = await fetch(`${API_URL}/invoices/${invoice_id}/pdf`, { headers });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(text || 'Failed to download PDF');
+  }
+  return await res.blob();
+}
+
 // Auth API calls
 async function registerAPI(username, password) {
   return await apiFetch('/auth/register', {

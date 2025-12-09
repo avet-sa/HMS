@@ -440,3 +440,103 @@ async function listPayments() {
     showMessage('payments-message', `Failed to load payments: ${e.message}`, true);
   }
 }
+
+// Invoice Functions
+async function listInvoices() {
+  showMessage('invoices-message', '');
+  try {
+    const invoices = await listInvoicesAPI();
+    const tbody = document.getElementById('invoice-list');
+    tbody.innerHTML = '';
+    if (invoices && invoices.length > 0) {
+      invoices.forEach(inv => {
+        const tr = document.createElement('tr');
+        
+        // ID column
+        const tdId = document.createElement('td');
+        tdId.textContent = inv.id;
+        tr.appendChild(tdId);
+        
+        // Invoice number column
+        const tdInvoiceNum = document.createElement('td');
+        tdInvoiceNum.textContent = inv.invoice_number;
+        tr.appendChild(tdInvoiceNum);
+        
+        // Booking ID column
+        const tdBooking = document.createElement('td');
+        tdBooking.textContent = inv.booking_id;
+        tr.appendChild(tdBooking);
+        
+        // Subtotal column
+        const tdSubtotal = document.createElement('td');
+        tdSubtotal.textContent = `$${inv.subtotal}`;
+        tr.appendChild(tdSubtotal);
+        
+        // Tax column
+        const tdTax = document.createElement('td');
+        tdTax.textContent = `$${inv.tax}`;
+        tr.appendChild(tdTax);
+        
+        // Total column
+        const tdTotal = document.createElement('td');
+        tdTotal.textContent = `$${inv.total}`;
+        tr.appendChild(tdTotal);
+        
+        // Issued date column
+        const tdIssued = document.createElement('td');
+        tdIssued.textContent = inv.issued_at ? new Date(inv.issued_at).toLocaleDateString() : 'N/A';
+        tr.appendChild(tdIssued);
+        
+        // Actions column
+        const tdActions = document.createElement('td');
+        const btnDownload = document.createElement('button');
+        btnDownload.className = 'btn btn-primary btn-sm';
+        btnDownload.textContent = 'Download PDF';
+        btnDownload.addEventListener('click', async () => {
+          try {
+            showMessage('invoices-message', 'Generating PDF...');
+            const blob = await downloadInvoicePDFAPI(inv.id);
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `invoice_${inv.invoice_number}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            showMessage('invoices-message', 'PDF downloaded successfully');
+          } catch (e) {
+            showMessage('invoices-message', `Download failed: ${e.message}`, true);
+          }
+        });
+        tdActions.appendChild(btnDownload);
+        tr.appendChild(tdActions);
+        
+        tbody.appendChild(tr);
+      });
+    } else {
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #7f8c8d;">No invoices yet</td></tr>';
+    }
+  } catch (e) {
+    showMessage('invoices-message', `Failed to load invoices: ${e.message}`, true);
+  }
+}
+
+async function generateInvoice() {
+  const booking_id = parseInt(document.getElementById('invoice-booking-id').value);
+  
+  if (!booking_id || Number.isNaN(booking_id)) {
+    showMessage('invoices-message', 'Please provide a valid booking ID', true);
+    return;
+  }
+  
+  showMessage('invoices-message', 'Generating invoice...');
+  try {
+    await generateInvoiceAPI(booking_id);
+    document.getElementById('invoice-form').reset();
+    await listInvoices();
+    showMessage('invoices-message', 'Invoice generated successfully');
+  } catch (e) {
+    showMessage('invoices-message', `Failed to generate invoice: ${e.message}`, true);
+  }
+}

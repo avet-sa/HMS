@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="icon" href="favicon.ico">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>HMS - Hotel Management System</title>
@@ -52,6 +53,7 @@
         <button class="nav-tab" data-tab="guests">Guests</button>
         <button class="nav-tab" data-tab="bookings">Bookings</button>
         <button class="nav-tab" data-tab="payments">Payments</button>
+        <button class="nav-tab" data-tab="invoices">Invoices</button>
         <button class="nav-tab" data-tab="reports">Reports</button>
       </nav>
 
@@ -95,7 +97,7 @@
             <form id="room-form">
               <div class="form-group">
                 <label for="room-number">Room Number</label>
-                <input type="text" id="room-number" placeholder="e.g., 101">
+                <input type="text" id="room-number" placeholder="101">
               </div>
               <div class="form-group">
                 <label for="room-type">Room Type</label>
@@ -114,11 +116,11 @@
               <div class="form-row">
                 <div class="form-group">
                   <label for="room-sqm">Square Meters</label>
-                  <input type="number" id="room-sqm" placeholder="e.g., 30">
+                  <input type="number" id="room-sqm" placeholder="30">
                 </div>
                 <div class="form-group">
                   <label for="room-floor">Floor</label>
-                  <input type="number" id="room-floor" placeholder="e.g., 1">
+                  <input type="number" id="room-floor" placeholder="1">
                 </div>
               </div>
               <button type="button" id="btn-add-room" class="btn btn-primary btn-full">Add Room</button>
@@ -164,7 +166,7 @@
             <form id="payment-form">
               <div class="form-group">
                 <label for="payment-booking-id">Booking ID</label>
-                <input type="number" id="payment-booking-id" placeholder="e.g., 1">
+                <input type="number" id="payment-booking-id" placeholder="1">
               </div>
               <div class="form-group">
                 <label for="payment-amount">Amount</label>
@@ -179,6 +181,53 @@
                 <input type="text" id="payment-method" value="card">
               </div>
               <button type="button" id="btn-add-payment" class="btn btn-primary btn-full">Create Payment</button>
+            </form>
+          </div>
+        </div>
+        <br>
+        <br>
+      </section>
+
+      <!-- Invoices Tab -->
+      <section id="invoices" class="tab-content">
+        <div class="section-header">
+          <h2>Invoices</h2>
+          <button id="btn-refresh-invoices" class="btn btn-secondary btn-sm">Refresh</button>
+        </div>
+        <p id="invoices-message" class="message" aria-live="polite"></p>
+
+        <div class="content-wrapper">
+          <div class="list-panel">
+            <h3>All Invoices</h3>
+            <div class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Invoice #</th>
+                    <th>Booking</th>
+                    <th>Subtotal</th>
+                    <th>Tax</th>
+                    <th>Total</th>
+                    <th>Issued Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="invoice-list">
+                  <!-- Invoices will be populated here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="form-panel">
+            <h3>Generate Invoice</h3>
+            <form id="invoice-form">
+              <div class="form-group">
+                <label for="invoice-booking-id">Booking ID</label>
+                <input type="number" id="invoice-booking-id" placeholder="1">
+              </div>
+              <button type="button" id="btn-generate-invoice" class="btn btn-primary btn-full">Generate Invoice</button>
             </form>
           </div>
         </div>
@@ -326,11 +375,11 @@
             <form id="booking-form">
               <div class="form-group">
                 <label for="booking-guest-id">Guest ID</label>
-                <input type="number" id="booking-guest-id" placeholder="e.g., 1">
+                <input type="number" id="booking-guest-id" placeholder="1">
               </div>
               <div class="form-group">
                 <label for="booking-room-id">Room ID</label>
-                <input type="number" id="booking-room-id" placeholder="e.g., 1">
+                <input type="number" id="booking-room-id" placeholder="1">
               </div>
               <div class="form-row">
                 <div class="form-group">

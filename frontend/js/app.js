@@ -28,6 +28,10 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("btn-refresh-payments").addEventListener("click", listPayments);
   document.getElementById("btn-add-payment").addEventListener("click", createPayment);
 
+  // Invoices
+  document.getElementById("btn-refresh-invoices").addEventListener("click", listInvoices);
+  document.getElementById("btn-generate-invoice").addEventListener("click", generateInvoice);
+
   // Reports buttons
   document.getElementById('btn-occupancy-report').addEventListener('click', fetchOccupancyReport);
   document.getElementById('btn-revenue-report').addEventListener('click', fetchRevenueReport);
@@ -48,6 +52,19 @@ document.addEventListener("DOMContentLoaded", () => {
       // Update active tab content
       document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
       document.getElementById(tabName).classList.add("active");
+
+      // Auto-load data when switching to certain tabs
+      if (tabName === "invoices") {
+        listInvoices();
+      } else if (tabName === "rooms") {
+        listRooms();
+      } else if (tabName === "guests") {
+        listGuests();
+      } else if (tabName === "bookings") {
+        listBookings();
+      } else if (tabName === "payments") {
+        listPayments();
+      }
     });
   });
 
