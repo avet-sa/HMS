@@ -47,7 +47,7 @@ def create_user(
     # Log user creation
     log_audit(
         db=db,
-        user_id=current_user.id,
+        user=current_user,
         action="CREATE",
         entity_type="user",
         entity_id=new_user.id,
@@ -84,7 +84,7 @@ def update_user(
     
     if user_in.permission_level and user_in.permission_level != old_user.permission_level:
         old_values["permission_level"] = old_user.permission_level.value
-        new_values["permission_level"] = user_in.permission_level.value
+        new_values["permission_level"] = user_in.permission_level
     
     if user_in.is_active is not None and user_in.is_active != old_user.is_active:
         old_values["is_active"] = old_user.is_active
@@ -96,7 +96,7 @@ def update_user(
     if old_values or new_values:
         log_audit(
             db=db,
-            user_id=current_user.id,
+            user=current_user,
             action="UPDATE",
             entity_type="user",
             entity_id=user.id,
@@ -130,7 +130,7 @@ def deactivate_user(
     # Log user deactivation
     log_audit(
         db=db,
-        user_id=current_user.id,
+        user=current_user,
         action="UPDATE",
         entity_type="user",
         entity_id=user.id,

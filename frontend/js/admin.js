@@ -353,14 +353,11 @@ function displayAuditLogs(logs) {
 
     tbody.innerHTML = logs.map(log => {
         const timestamp = new Date(log.created_at).toLocaleString();
-        const actionText = log.action.split('_').map(word => 
-            word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
-        ).join(' ');
         return `
             <tr>
                 <td>${timestamp}</td>
                 <td>${log.username || 'SYSTEM'}</td>
-                <td><span class="badge badge-${getActionBadgeClass(log.action)}">${actionText}</span></td>
+                <td><span class="badge badge-${getActionBadgeClass(log.action)}">${log.action}</span></td>
                 <td>${log.entity_type}</td>
                 <td>${log.entity_id || '-'}</td>
                 <td>${log.description || '-'}</td>
