@@ -117,6 +117,69 @@ class RoomType(Base):
 
 
 # -----------------------------
+# Pricing Rule
+# -----------------------------
+class PricingRuleType(Enum):
+    SEASONAL = "seasonal"  # e.g., summer, winter rates
+    WEEKEND = "weekend"  # Friday-Saturday premium
+    EARLY_BIRD = "early_bird"  # Discount for advance booking
+    LAST_MINUTE = "last_minute"  # Discount for booking close to check-in
+    LOYALTY = "loyalty"  # Discount based on loyalty tier
+    LONG_STAY = "long_stay"  # Discount for extended stays
+    CUSTOM = "custom"  # Custom rules
+
+
+class PricingRule(Base):
+    """Dynamic pricing rules to adjust room rates based on various factors"""
+    __tablename__ = "pricing_rules"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), nullable=False)
+    description = Column(String(500))
+    
+    # Rule type (stored as string for simplicity)
+    rule_type = Column(String(20), nullable=False, index=True)  # seasonal, weekend, early_bird, etc.
+    
+    # Priority (higher priority rules are applied first)
+    priority = Column(Integer, default=0, nullable=False, index=True)
+    
+    # Price adjustment
+    adjustment_type = Column(String(20), nullable=False)  # "percentage", "fixed_amount"
+    adjustment_value = Column(Numeric(10, 2), nullable=False)  # e.g., 20 for 20% or $20
+    
+    # Applicability filters (NULL means applies to all)
+    room_type_id = Column(Integer, ForeignKey("room_types.id"), nullable=True, index=True)
+    
+    # Date range (NULL means no date restriction)
+    start_date = Column(Date, nullable=True, index=True)
+    end_date = Column(Date, nullable=True, index=True)
+    
+    # Days of week (JSON array of day numbers: 0=Monday, 6=Sunday)
+    # e.g., "[5, 6]" for weekends
+    applicable_days = Column(String(50), nullable=True)  # JSON string
+    
+    # Booking conditions
+    min_nights = Column(Integer, nullable=True)  # Minimum stay required
+    min_advance_days = Column(Integer, nullable=True)  # Minimum days before check-in
+    max_advance_days = Column(Integer, nullable=True)  # Maximum days before check-in
+    
+    # Loyalty tier (NULL means applies to all tiers)
+    min_loyalty_tier = Column(Integer, nullable=True)
+    
+    # Active status
+    is_active = Column(Boolean, default=True, nullable=False, index=True)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    room_type = relationship("RoomType")
+    
+    def __repr__(self):
+        return f"<PricingRule {self.name} ({self.rule_type.value})>"
+
+
+# -----------------------------
 # Room
 # -----------------------------
 class Room(Base):
