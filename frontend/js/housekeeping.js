@@ -3,18 +3,14 @@
  * Handles housekeeping tasks, room status, and staff performance
  */
 
-// ==================== API Functions ====================
+// ==================== UI Functions ====================
 
 /**
  * Fetch housekeeping dashboard statistics
  */
 async function fetchHousekeepingDashboard() {
   try {
-    const response = await fetch(`${API_BASE_URL}/reports/housekeeping/dashboard`, {
-      headers: getAuthHeaders(),
-    });
-    if (!response.ok) throw new Error('Failed to fetch dashboard');
-    return await response.json();
+    return await fetchHousekeepingDashboardAPI();
   } catch (error) {
     console.error('Error fetching housekeeping dashboard:', error);
     showMessage('housekeeping-message', 'Failed to load dashboard', 'error');
@@ -27,18 +23,7 @@ async function fetchHousekeepingDashboard() {
  */
 async function fetchHousekeepingTasks(filters = {}) {
   try {
-    const params = new URLSearchParams();
-    if (filters.status) params.append('status', filters.status);
-    if (filters.priority) params.append('priority', filters.priority);
-    if (filters.task_type) params.append('task_type', filters.task_type);
-    if (filters.room_id) params.append('room_id', filters.room_id);
-    
-    const url = `${API_BASE_URL}/housekeeping/tasks/${params.toString() ? '?' + params.toString() : ''}`;
-    const response = await fetch(url, {
-      headers: getAuthHeaders(),
-    });
-    if (!response.ok) throw new Error('Failed to fetch tasks');
-    return await response.json();
+    return await fetchHousekeepingTasksAPI(filters);
   } catch (error) {
     console.error('Error fetching tasks:', error);
     showMessage('housekeeping-message', 'Failed to load tasks', 'error');
@@ -51,16 +36,7 @@ async function fetchHousekeepingTasks(filters = {}) {
  */
 async function createHousekeepingTask(taskData) {
   try {
-    const response = await fetch(`${API_BASE_URL}/housekeeping/tasks/`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(taskData),
-    });
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.detail || 'Failed to create task');
-    }
-    return await response.json();
+    return await createHousekeepingTaskAPI(taskData);
   } catch (error) {
     console.error('Error creating task:', error);
     throw error;
@@ -72,13 +48,7 @@ async function createHousekeepingTask(taskData) {
  */
 async function assignTask(taskId, userId) {
   try {
-    const response = await fetch(`${API_BASE_URL}/housekeeping/tasks/${taskId}/assign`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ assigned_to: userId }),
-    });
-    if (!response.ok) throw new Error('Failed to assign task');
-    return await response.json();
+    return await assignTaskAPI(taskId, userId);
   } catch (error) {
     console.error('Error assigning task:', error);
     throw error;
@@ -90,12 +60,7 @@ async function assignTask(taskId, userId) {
  */
 async function startTask(taskId) {
   try {
-    const response = await fetch(`${API_BASE_URL}/housekeeping/tasks/${taskId}/start`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-    });
-    if (!response.ok) throw new Error('Failed to start task');
-    return await response.json();
+    return await startTaskAPI(taskId);
   } catch (error) {
     console.error('Error starting task:', error);
     throw error;
@@ -107,13 +72,7 @@ async function startTask(taskId) {
  */
 async function completeTask(taskId, completionData) {
   try {
-    const response = await fetch(`${API_BASE_URL}/housekeeping/tasks/${taskId}/complete`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(completionData),
-    });
-    if (!response.ok) throw new Error('Failed to complete task');
-    return await response.json();
+    return await completeTaskAPI(taskId, completionData);
   } catch (error) {
     console.error('Error completing task:', error);
     throw error;
@@ -125,13 +84,7 @@ async function completeTask(taskId, completionData) {
  */
 async function verifyTask(taskId, verificationData) {
   try {
-    const response = await fetch(`${API_BASE_URL}/housekeeping/tasks/${taskId}/verify`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(verificationData),
-    });
-    if (!response.ok) throw new Error('Failed to verify task');
-    return await response.json();
+    return await verifyTaskAPI(taskId, verificationData);
   } catch (error) {
     console.error('Error verifying task:', error);
     throw error;
@@ -143,11 +96,7 @@ async function verifyTask(taskId, verificationData) {
  */
 async function fetchRoomStatusGrid() {
   try {
-    const response = await fetch(`${API_BASE_URL}/reports/housekeeping/room-status-grid`, {
-      headers: getAuthHeaders(),
-    });
-    if (!response.ok) throw new Error('Failed to fetch room status grid');
-    return await response.json();
+    return await fetchRoomStatusGridAPI();
   } catch (error) {
     console.error('Error fetching room grid:', error);
     showMessage('housekeeping-message', 'Failed to load room grid', 'error');

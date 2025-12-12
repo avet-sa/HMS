@@ -93,15 +93,15 @@ async function createPaymentAPI(booking_id, amount, currency = 'USD', method = '
 
 // Report API calls
 async function fetchOccupancyReportAPI(start_date, end_date) {
-  return await apiFetch(`/occupancy?start_date=${start_date}&end_date=${end_date}`);
+  return await apiFetch(`/reports/occupancy?start_date=${start_date}&end_date=${end_date}`);
 }
 
 async function fetchRevenueReportAPI(start_date, end_date) {
-  return await apiFetch(`/revenue?start_date=${start_date}&end_date=${end_date}`);
+  return await apiFetch(`/reports/revenue?start_date=${start_date}&end_date=${end_date}`);
 }
 
 async function fetchTrendsReportAPI(start_date, end_date) {
-  return await apiFetch(`/trends?start_date=${start_date}&end_date=${end_date}`);
+  return await apiFetch(`/reports/trends?start_date=${start_date}&end_date=${end_date}`);
 }
 
 // Invoice API calls
@@ -159,4 +159,58 @@ async function loginAPI(username, password) {
 
 async function fetchUserInfoAPI() {
   return await apiFetch("/users/me");
+}
+
+// Housekeeping API calls
+async function fetchHousekeepingDashboardAPI() {
+  return await apiFetch('/reports/housekeeping/dashboard');
+}
+
+async function fetchHousekeepingTasksAPI(filters = {}) {
+  const params = new URLSearchParams();
+  if (filters.status) params.append('status', filters.status);
+  if (filters.priority) params.append('priority', filters.priority);
+  if (filters.task_type) params.append('task_type', filters.task_type);
+  if (filters.room_id) params.append('room_id', filters.room_id);
+  
+  const queryString = params.toString();
+  return await apiFetch(`/housekeeping/tasks/${queryString ? '?' + queryString : ''}`);
+}
+
+async function createHousekeepingTaskAPI(taskData) {
+  return await apiFetch('/housekeeping/tasks/', {
+    method: 'POST',
+    body: JSON.stringify(taskData)
+  });
+}
+
+async function assignTaskAPI(taskId, userId) {
+  return await apiFetch(`/housekeeping/tasks/${taskId}/assign`, {
+    method: 'POST',
+    body: JSON.stringify({ assigned_to: userId })
+  });
+}
+
+async function startTaskAPI(taskId) {
+  return await apiFetch(`/housekeeping/tasks/${taskId}/start`, {
+    method: 'POST'
+  });
+}
+
+async function completeTaskAPI(taskId, completionData) {
+  return await apiFetch(`/housekeeping/tasks/${taskId}/complete`, {
+    method: 'POST',
+    body: JSON.stringify(completionData)
+  });
+}
+
+async function verifyTaskAPI(taskId, verificationData) {
+  return await apiFetch(`/housekeeping/tasks/${taskId}/verify`, {
+    method: 'POST',
+    body: JSON.stringify(verificationData)
+  });
+}
+
+async function fetchRoomStatusGridAPI() {
+  return await apiFetch('/reports/housekeeping/room-status-grid');
 }
