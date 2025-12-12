@@ -62,7 +62,7 @@ def test_full_booking_flow(client, admin_headers):
         "status": "pending",
     }
     response = client.post("/bookings/", json=booking_data, headers=admin_headers)
-    assert response.status_code == 200, response.text
+    assert response.status_code == 201, response.text
     booking = response.json()
     assert booking["guest"]["id"] == guest_id
     assert booking["room_id"] == room_id
