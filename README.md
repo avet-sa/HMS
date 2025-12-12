@@ -32,8 +32,9 @@ A comprehensive, full-featured hotel management system built with **Python FastA
 - **Cancellation & Refund Policies** – Define flexible, partial, and non-refundable policies with automated enforcement
 - **No-Show Penalties** – Automatic penalty application for guests who fail to check in
 - **Dynamic Pricing Rules** – Seasonal rates, weekend premiums, early bird discounts, long stay discounts, loyalty rewards with priority-based stacking
+- **Housekeeping Management** – Automated task creation on checkout, smart priority assignment, staff performance tracking, room status grid
 - **Centralized Configuration** – Pydantic-based settings management with environment variable validation
-- **Reporting & Analytics** – Occupancy, revenue, and booking trend reports with cross-database support (PostgreSQL/SQLite)
+- **Reporting & Analytics** – Occupancy, revenue, booking trends, housekeeping dashboards with cross-database support (PostgreSQL/SQLite)
 - **Role-Based Access Control (RBAC)** – REGULAR users, MANAGER staff, and ADMIN roles with endpoint-level authorization
 - **Rate Limiting** – API request throttling via slowapi to prevent abuse
 - **Automated Invoicing** – Auto-generate invoices when payments are processed with PDF export capability
@@ -100,8 +101,9 @@ HMS1/
 │   │   │   ├── payments.py           # /payments/ GET, /payments/create, /payments/{id}/process, refund
 │   │   │   ├── invoices.py           # /invoices/ endpoints (list, generate, PDF download)
 │   │   │   ├── pricing_rules.py      # /pricing-rules/ CRUD, /calculate-price
+│   │   │   ├── housekeeping.py       # /housekeeping/tasks CRUD, assign, start, complete, verify
 │   │   │   ├── audit_logs.py         # /audit-logs/ endpoints with filtering
-│   │   │   └── reports.py            # /reports/occupancy, revenue, trends
+│   │   │   └── reports.py            # /reports/occupancy, revenue, trends, housekeeping/*
 │   │   ├── core/
 │   │   │   ├── config.py             # Centralized configuration with pydantic-settings (40+ settings)
 │   │   │   ├── permissions.py        # PermissionLevel enum (REGULAR, MANAGER, ADMIN)
@@ -121,16 +123,20 @@ HMS1/
 │   │   │   ├── payment.py            # PaymentCreate, PaymentResponse
 │   │   │   ├── invoice.py            # InvoiceResponse
 │   │   │   ├── pricing_rule.py       # PricingRuleCreate, PriceCalculationRequest/Response
+│   │   │   ├── housekeeping.py       # HousekeepingTaskCreate, HousekeepingTaskResponse
+│   │   │   ├── housekeeping_report.py # HousekeepingDashboard, StaffPerformance, RoomStatusGrid
 │   │   │   ├── audit_log.py          # AuditLogResponse
 │   │   │   └── report.py             # ReportResponse models
 │   │   ├── services/
 │   │   │   ├── user_service.py       # User CRUD & authentication
 │   │   │   ├── room_service.py       # Room CRUD & availability logic
 │   │   │   ├── guest_service.py      # Guest CRUD
-│   │   │   ├── booking_service.py    # Booking lifecycle, no-show penalties
+│   │   │   ├── booking_service.py    # Booking lifecycle, no-show penalties, housekeeping integration
 │   │   │   ├── payment_service.py    # Payment creation, processing, refunds, auto-invoice
 │   │   │   ├── invoice_service.py    # Invoice generation and PDF export (reportlab)
 │   │   │   ├── pricing_rule_service.py # Dynamic pricing engine with rule stacking
+│   │   │   ├── housekeeping_service.py # Housekeeping task CRUD, lifecycle, automation
+│   │   │   ├── housekeeping_report_service.py # Dashboard, staff performance, room status
 │   │   │   ├── report_service.py     # Occupancy, revenue, trends reports (SQLite/Postgres compatible)
 │   │   │   └── refund_policy.py      # Cancellation & refund calculation
 │   │   └── utils/
@@ -149,22 +155,23 @@ HMS1/
 │           ├── 881741c5e475_add_audit_logs_table.py
 │           └── b954b2b2b7e0_add_pricing_rules.py
 ├── frontend/
-│   ├── index.html                    # Main dashboard (auth, rooms, guests, bookings, payments, invoices, reports)
+│   ├── index.html                    # Main dashboard (auth, rooms, guests, bookings, payments, invoices, housekeeping, reports)
 │   ├── admin.html                    # Admin panel (user management with permission controls)
-│   ├── styles.css                    # Dark/light theme, responsive table layouts, badge components
+│   ├── styles.css                    # Dark/light theme, responsive table layouts, badge components, housekeeping styles
 │   ├── admin.css                     # Admin panel specific styles
 │   └── js/
 │       ├── config.js                 # API base URL configuration
 │       ├── utils.js                  # Utility functions (showMessage, formatters)
 │       ├── theme.js                  # Dark/light theme toggle logic
-│       ├── api.js                    # API client with Bearer token auth (apiFetch)
+│       ├── api.js                    # API client with Bearer token auth (apiFetch), housekeeping endpoints
 │       ├── auth.js                   # Authentication & user context
 │       ├── ui.js                     # CRUD UI rendering (table rows, badges)
+│       ├── housekeeping.js           # Housekeeping UI (dashboard, task management, room grid)
 │       ├── reports.js                # Report generation and chart rendering
 │       ├── app.js                    # Main application initialization
 │       └── admin.js                  # Admin user management (permission cycling, activation)
 ├── tests/
-│   ├── conftest.py                   # Pytest fixtures (client, admin_headers, regular_headers, db)
+│   ├── conftest.py                   # Pytest fixtures (client, admin_headers, regular_headers, db, guest)
 │   ├── test_auth_users.py            # Authentication & user endpoints
 │   ├── test_rooms.py                 # Room CRUD & availability
 │   ├── test_room_types.py            # Room type CRUD
@@ -177,6 +184,9 @@ HMS1/
 │   ├── test_invoice_service.py       # Invoice generation
 │   ├── test_invoices.py              # Invoice API endpoints
 │   ├── test_pricing_rules.py         # Dynamic pricing rules & calculations (14 tests)
+│   ├── test_housekeeping.py          # Housekeeping CRUD & lifecycle (18 tests)
+│   ├── test_housekeeping_automation.py # Auto-task creation & room status (5 tests)
+│   ├── test_housekeeping_reports.py  # Reporting & analytics (10 tests)
 │   ├── test_audit_logs.py            # Audit logging endpoints
 │   ├── test_reports.py               # Report generation (occupancy, revenue, trends)
 │   ├── test_availability.py          # Room availability logic
@@ -381,6 +391,34 @@ Comprehensive tracking of all critical operations for compliance.
 | user_agent | String(500) | NULL | Client user agent |
 | created_at | DateTime | DEFAULT=now(), INDEXED | Timestamp |
 
+#### **housekeeping_tasks**
+Manages room cleaning and maintenance tasks with automation.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | Integer | PK | Task ID |
+| room_id | Integer | FK→rooms, CASCADE, Indexed | Room requiring cleaning/maintenance |
+| task_type | ENUM | NOT NULL | ROUTINE_CLEANING \| DEEP_CLEANING \| TURNOVER \| MAINTENANCE \| INSPECTION \| SPECIAL_REQUEST |
+| priority | ENUM | DEFAULT=NORMAL | URGENT \| HIGH \| NORMAL \| LOW |
+| status | ENUM | DEFAULT=PENDING | PENDING \| IN_PROGRESS \| COMPLETED \| VERIFIED |
+| assigned_to | Integer | FK→users, NULL | Staff member assigned to task |
+| created_by | Integer | FK→users | Staff member who created task |
+| description | String(500) | NULL | Task details and special notes |
+| estimated_duration_minutes | Integer | DEFAULT=30 | Expected time to complete |
+| started_at | DateTime | NULL | Task start timestamp |
+| completed_at | DateTime | NULL | Task completion timestamp |
+| verified_at | DateTime | NULL | Task verification timestamp |
+| verified_by | Integer | FK→users, NULL | Staff member who verified task |
+| notes | String(1000) | NULL | Staff notes during execution |
+| is_checkout_cleaning | Boolean | DEFAULT=False | Auto-created after guest checkout |
+| created_at | DateTime | DEFAULT=now(), INDEXED | Task creation timestamp |
+| updated_at | DateTime | onupdate=now() | Last update timestamp |
+
+**Task Automation:**
+- Auto-creates TURNOVER tasks on guest checkout
+- Smart priority: URGENT (same day checkout), HIGH (1 day), NORMAL (2+ days)
+- Room status integration: Sets room to MAINTENANCE during cleaning
+
 ---
 
 ## API Endpoints
@@ -498,6 +536,73 @@ Comprehensive tracking of all critical operations for compliance.
 - `date_to` - Filter to date (ISO format)
 - `sort_by` - Sort field (default: created_at)
 - `sort_order` - Sort order (asc/desc, default: desc)
+
+### **Housekeeping** (Room cleaning & maintenance management)
+| Method | Endpoint | Auth | Role | Description |
+|--------|----------|------|------|-------------|
+| GET | /housekeeping/tasks | Bearer JWT | Any | List housekeeping tasks with filters |
+| POST | /housekeeping/tasks | Bearer JWT | MANAGER, ADMIN | Create new housekeeping task |
+| GET | /housekeeping/tasks/{id} | Bearer JWT | Any | Get specific task details |
+| PATCH | /housekeeping/tasks/{id}/assign | Bearer JWT | MANAGER, ADMIN | Assign task to staff member |
+| PATCH | /housekeeping/tasks/{id}/start | Bearer JWT | Any | Start task (assigned user only) |
+| PATCH | /housekeeping/tasks/{id}/complete | Bearer JWT | Any | Complete task (assigned user only) |
+| PATCH | /housekeeping/tasks/{id}/verify | Bearer JWT | MANAGER, ADMIN | Verify completed task |
+
+**Query Parameters (Housekeeping Tasks):**
+- `room_id` - Filter by specific room
+- `status` - Filter by status (PENDING, IN_PROGRESS, COMPLETED, VERIFIED)
+- `task_type` - Filter by type (ROUTINE_CLEANING, DEEP_CLEANING, TURNOVER, MAINTENANCE, INSPECTION, SPECIAL_REQUEST)
+- `priority` - Filter by priority (URGENT, HIGH, NORMAL, LOW)
+- `assigned_to` - Filter by assigned user ID
+- `is_checkout_cleaning` - Filter auto-generated checkout tasks
+
+**Task Types:**
+- `ROUTINE_CLEANING` - Daily room cleaning
+- `DEEP_CLEANING` - Thorough cleaning (weekly/monthly)
+- `TURNOVER` - Room turnover after checkout (auto-created)
+- `MAINTENANCE` - Maintenance work required
+- `INSPECTION` - Quality inspection
+- `SPECIAL_REQUEST` - Guest or management special request
+
+**Task Workflow:**
+1. **PENDING** - Task created, awaiting assignment
+2. **IN_PROGRESS** - Assigned staff member started task
+3. **COMPLETED** - Staff member marked task complete
+4. **VERIFIED** - Manager verified task quality
+
+**Automation Features:**
+- Auto-creates TURNOVER task on guest checkout
+- Smart priority assignment:
+  - URGENT: Same-day checkout (0 days before next check-in)
+  - HIGH: 1 day before next check-in
+  - NORMAL: 2+ days before next check-in
+- Room status integration: Sets room to MAINTENANCE during cleaning
+- Auto-restores room to AVAILABLE when task verified
+
+### **Housekeeping Reports** (Analytics & dashboards)
+| Method | Endpoint | Auth | Role | Description |
+|--------|----------|------|------|-------------|
+| GET | /reports/housekeeping/dashboard | Bearer JWT | MANAGER, ADMIN | Overall housekeeping statistics |
+| GET | /reports/housekeeping/staff-performance | Bearer JWT | MANAGER, ADMIN | Staff productivity metrics |
+| GET | /reports/housekeeping/room-status-grid | Bearer JWT | MANAGER, ADMIN | Room-by-room status overview |
+
+**Dashboard Metrics:**
+- Total tasks by status (PENDING, IN_PROGRESS, COMPLETED, VERIFIED)
+- Average completion time
+- Task distribution by type and priority
+- Staff workload summary
+
+**Staff Performance Metrics:**
+- Tasks assigned/completed per staff member
+- Average completion time per staff member
+- Task verification rate
+- Productivity trends
+
+**Room Status Grid:**
+- Current maintenance status per room
+- Active tasks per room
+- Last cleaning date
+- Next scheduled cleaning
 
 **Query Parameters (Reports):**
 - `start_date` (YYYY-MM-DD)
@@ -794,12 +899,123 @@ PENDING → CONFIRMED → CHECKED_IN → CHECKED_OUT (final bill calculated)
 - **Occupancy Report:** % rooms occupied by date range
 - **Revenue Report:** Total revenue grouped by date (SQLite/Postgres compatible via `func.date()`)
 - **Trends Report:** Booking volume & patterns over time
+- **Housekeeping Dashboard:** Task statistics by status, type, priority with average completion time
+- **Staff Performance:** Individual staff productivity metrics with task counts and completion times
+- **Room Status Grid:** Room-by-room maintenance status, active tasks, and cleaning schedules
 
-### **7. Rate Limiting**
+### **7. Housekeeping Management**
+
+#### **Task Creation & Automation**
+- **Manual task creation** by MANAGER/ADMIN:
+  - Select room, task type, priority, assigned staff
+  - Add description and estimated duration
+  - Set special notes for staff reference
+- **Auto-task creation on checkout:**
+  - System automatically creates TURNOVER tasks when guest checks out
+  - Marked with `is_checkout_cleaning=True` for tracking
+  - Integrates with next booking to calculate urgency
+
+#### **Smart Priority Assignment**
+Automatically calculates priority based on next check-in:
+```
+Days until next check-in:
+  0 days → URGENT (same-day checkout, immediate attention)
+  1 day  → HIGH (limited time, prioritize)
+  2+ days → NORMAL (standard cleaning schedule)
+```
+
+#### **Task Lifecycle**
+```
+PENDING → IN_PROGRESS → COMPLETED → VERIFIED
+         (assigned)    (staff marks) (manager confirms)
+```
+
+- **PENDING**: Task created, awaiting staff assignment
+- **IN_PROGRESS**: Assigned staff member has started work
+- **COMPLETED**: Staff member finished and marked complete
+- **VERIFIED**: Manager inspected and approved quality
+
+#### **Room Status Integration**
+- **During cleaning:** Room automatically set to `MAINTENANCE` status
+- **After verification:** Room restored to `AVAILABLE` status
+- **Prevents double-booking** during housekeeping operations
+- **Visible in room listings** with maintenance badge
+
+#### **Task Types**
+- **ROUTINE_CLEANING**: Daily room cleaning (occupied rooms)
+- **DEEP_CLEANING**: Thorough cleaning (weekly/monthly schedule)
+- **TURNOVER**: Room preparation after checkout (auto-created)
+- **MAINTENANCE**: Repair work or facility maintenance
+- **INSPECTION**: Quality control inspections
+- **SPECIAL_REQUEST**: Guest or management special needs
+
+#### **Dashboard & Analytics**
+- **6 Statistics Cards** with gradient backgrounds:
+  - Total Tasks (all-time count)
+  - Pending Tasks (awaiting assignment/action)
+  - In Progress (active work)
+  - Completed Today (daily productivity)
+  - Average Completion Time (minutes)
+  - Staff Members (total assigned users)
+- **Filters:**
+  - Room number
+  - Task type
+  - Priority level
+  - Status
+  - Assigned staff member
+  - Auto-created checkout tasks only
+- **Task List Table:**
+  - Room, Type, Priority, Status, Assigned To, Created, Duration
+  - Action buttons: Assign, Start, Complete, Verify (context-aware)
+  - Badge-based visual status indicators
+- **Room Status Grid Modal:**
+  - Visual grid of all rooms
+  - Color-coded by maintenance status
+  - Shows active task count per room
+  - One-click access from dashboard
+
+#### **Staff Workflow**
+1. **Manager assigns task** to staff member
+2. **Staff member starts task** (updates status to IN_PROGRESS, room to MAINTENANCE)
+3. **Staff completes task** (updates status to COMPLETED, adds notes)
+4. **Manager verifies task** (inspects quality, updates to VERIFIED, room to AVAILABLE)
+
+#### **Permissions & Security**
+- **View tasks**: Any authenticated user
+- **Create tasks**: MANAGER, ADMIN only
+- **Assign tasks**: MANAGER, ADMIN only
+- **Start tasks**: Assigned staff member only
+- **Complete tasks**: Assigned staff member only
+- **Verify tasks**: MANAGER, ADMIN only
+
+#### **Frontend Features**
+- **Tab-based UI** in main dashboard
+- **Real-time statistics** with gradient cards
+- **Advanced filtering** for task management
+- **Room status visualization** with modal grid
+- **Responsive design** with dark/light theme support
+- **Centralized API integration** in `api.js`
+
+#### **Testing Coverage**
+- **18 core tests** (`test_housekeeping.py`):
+  - Task CRUD operations
+  - Lifecycle state transitions
+  - Permission enforcement
+  - Validation rules
+- **5 automation tests** (`test_housekeeping_automation.py`):
+  - Auto-task creation on checkout
+  - Smart priority calculation
+  - Room status integration
+- **10 reporting tests** (`test_housekeeping_reports.py`):
+  - Dashboard statistics
+  - Staff performance metrics
+  - Room status grid accuracy
+
+### **8. Rate Limiting**
 - slowapi middleware configured on `/` (100 requests/minute default)
 - Prevents API abuse
 
-### **8. CORS & Security**
+### **9. CORS & Security**
 - CORS whitelist in `.env` (default: localhost:5500, localhost:3000)
 - JWT Bearer tokens with expiration
 - Password hashing via bcrypt
@@ -962,12 +1178,10 @@ if booking.status != 'checked_in' and booking.check_in < today:
 4. **Advanced Pricing** – Seasonal rates, dynamic pricing, discounts
 5. **Loyalty Program** – Points accumulation, tier-based benefits
 6. **Staff Scheduling** – Employee shifts, availability tracking
-7. **Housekeeping Management** – Room cleaning tasks, inspections
-8. **Integration** – Payment gateways (Stripe, PayPal), third-party booking (OTA sync)
-9. **Analytics Dashboard** – Charts, KPIs, forecasting
-10. **Audit Logging** – Track all data modifications for compliance
-11. **Multi-Property Support** – Manage multiple hotels from one system
-12. **Guest Portal** – Self-service check-in, booking modifications, invoices
+7. **Integration** – Payment gateways (Stripe, PayPal), third-party booking (OTA sync)
+8. **Analytics Dashboard** – Charts, KPIs, forecasting
+9. **Multi-Property Support** – Manage multiple hotels from one system
+10. **Guest Portal** – Self-service check-in, booking modifications, invoices
 
 ---
 
