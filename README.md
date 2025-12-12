@@ -31,6 +31,8 @@ A comprehensive, full-featured hotel management system built with **Python FastA
 - **Payment Processing** – Track pending/paid/refunded payments with overpayment protection and auto-invoice generation
 - **Cancellation & Refund Policies** – Define flexible, partial, and non-refundable policies with automated enforcement
 - **No-Show Penalties** – Automatic penalty application for guests who fail to check in
+- **Dynamic Pricing Rules** – Seasonal rates, weekend premiums, early bird discounts, long stay discounts, loyalty rewards with priority-based stacking
+- **Centralized Configuration** – Pydantic-based settings management with environment variable validation
 - **Reporting & Analytics** – Occupancy, revenue, and booking trend reports with cross-database support (PostgreSQL/SQLite)
 - **Role-Based Access Control (RBAC)** – REGULAR users, MANAGER staff, and ADMIN roles with endpoint-level authorization
 - **Rate Limiting** – API request throttling via slowapi to prevent abuse
@@ -97,9 +99,11 @@ HMS1/
 │   │   │   ├── bookings.py           # /bookings/ + lifecycle endpoints
 │   │   │   ├── payments.py           # /payments/ GET, /payments/create, /payments/{id}/process, refund
 │   │   │   ├── invoices.py           # /invoices/ endpoints (list, generate, PDF download)
+│   │   │   ├── pricing_rules.py      # /pricing-rules/ CRUD, /calculate-price
+│   │   │   ├── audit_logs.py         # /audit-logs/ endpoints with filtering
 │   │   │   └── reports.py            # /reports/occupancy, revenue, trends
 │   │   ├── core/
-│   │   │   ├── config.py             # Environment & database config
+│   │   │   ├── config.py             # Centralized configuration with pydantic-settings (40+ settings)
 │   │   │   ├── permissions.py        # PermissionLevel enum (REGULAR, MANAGER, ADMIN)
 │   │   │   └── security.py           # JWT token generation & validation
 │   │   ├── dependencies/
@@ -116,6 +120,8 @@ HMS1/
 │   │   │   ├── booking.py            # BookingCreate, BookingResponse
 │   │   │   ├── payment.py            # PaymentCreate, PaymentResponse
 │   │   │   ├── invoice.py            # InvoiceResponse
+│   │   │   ├── pricing_rule.py       # PricingRuleCreate, PriceCalculationRequest/Response
+│   │   │   ├── audit_log.py          # AuditLogResponse
 │   │   │   └── report.py             # ReportResponse models
 │   │   ├── services/
 │   │   │   ├── user_service.py       # User CRUD & authentication
@@ -124,10 +130,13 @@ HMS1/
 │   │   │   ├── booking_service.py    # Booking lifecycle, no-show penalties
 │   │   │   ├── payment_service.py    # Payment creation, processing, refunds, auto-invoice
 │   │   │   ├── invoice_service.py    # Invoice generation and PDF export (reportlab)
+│   │   │   ├── pricing_rule_service.py # Dynamic pricing engine with rule stacking
 │   │   │   ├── report_service.py     # Occupancy, revenue, trends reports (SQLite/Postgres compatible)
 │   │   │   └── refund_policy.py      # Cancellation & refund calculation
 │   │   └── utils/
-│   │       └── availability.py       # Room availability checking logic
+│   │       ├── availability.py       # Room availability checking logic
+│   │       ├── audit.py              # Audit logging utility
+│   │       └── pagination.py         # Pagination utilities
 │   └── alembic/
 │       ├── env.py                    # Alembic environment config
 │       ├── script.py.mako            # Migration template
@@ -136,7 +145,9 @@ HMS1/
 │           ├── 003_add_booking_created_by.py
 │           ├── 004_booking_lifecycle.py
 │           ├── 005_payments_invoices.py
-│           └── 006_cancellation_policies.py
+│           ├── 006_cancellation_policies.py
+│           ├── 881741c5e475_add_audit_logs_table.py
+│           └── b954b2b2b7e0_add_pricing_rules.py
 ├── frontend/
 │   ├── index.html                    # Main dashboard (auth, rooms, guests, bookings, payments, invoices, reports)
 │   ├── admin.html                    # Admin panel (user management with permission controls)
@@ -156,6 +167,7 @@ HMS1/
 │   ├── conftest.py                   # Pytest fixtures (client, admin_headers, regular_headers, db)
 │   ├── test_auth_users.py            # Authentication & user endpoints
 │   ├── test_rooms.py                 # Room CRUD & availability
+│   ├── test_room_types.py            # Room type CRUD
 │   ├── test_guests.py                # Guest CRUD
 │   ├── test_bookings.py              # Booking lifecycle
 │   ├── test_payments_integration.py  # Payment creation, processing, overpayment protection
@@ -163,7 +175,12 @@ HMS1/
 │   ├── test_cancellation_refund.py   # Refund policy logic
 │   ├── test_no_show_penalties.py     # No-show penalty application
 │   ├── test_invoice_service.py       # Invoice generation
+│   ├── test_invoices.py              # Invoice API endpoints
+│   ├── test_pricing_rules.py         # Dynamic pricing rules & calculations (14 tests)
+│   ├── test_audit_logs.py            # Audit logging endpoints
 │   ├── test_reports.py               # Report generation (occupancy, revenue, trends)
+│   ├── test_availability.py          # Room availability logic
+│   ├── test_integration.py           # End-to-end integration tests
 │   └── test_api_smoke.py             # Smoke tests
 ├── Dockerfile                         # Development image (python:3.12.4-bookworm)
 ├── Dockerfile.prod                    # Production multi-stage image (Poetry)
@@ -317,6 +334,53 @@ Defines refund tiers based on days before check-in.
 | created_at | DateTime | DEFAULT=now() | Creation timestamp |
 | updated_at | DateTime | onupdate=now() | Last update timestamp |
 
+#### **pricing_rules**
+Dynamic pricing rules for automated rate adjustments.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | Integer | PK | Rule ID |
+| name | String(100) | NOT NULL | Rule name |
+| description | String(500) | NULL | Rule description |
+| rule_type | String(20) | NOT NULL | seasonal \| weekend \| early_bird \| last_minute \| loyalty \| long_stay \| custom |
+| priority | Integer | DEFAULT=0 | Higher priority rules applied first |
+| adjustment_type | String(20) | NOT NULL | percentage \| fixed_amount |
+| adjustment_value | Numeric(10,2) | NOT NULL | Adjustment value (e.g., 20 = 20% or $20) |
+| room_type_id | Integer | FK(room_types), NULL | Applies to specific room type (NULL = all) |
+| start_date | Date | NULL | Rule start date (NULL = no restriction) |
+| end_date | Date | NULL | Rule end date (NULL = no restriction) |
+| applicable_days | String(50) | NULL | JSON array of weekdays [0-6] (0=Monday) |
+| min_nights | Integer | NULL | Minimum stay required |
+| min_advance_days | Integer | NULL | Minimum days before check-in |
+| max_advance_days | Integer | NULL | Maximum days before check-in |
+| min_loyalty_tier | Integer | NULL | Minimum guest loyalty tier |
+| is_active | Boolean | DEFAULT=True | Rule status |
+| created_at | DateTime | DEFAULT=now() | Creation timestamp |
+| updated_at | DateTime | onupdate=now() | Last update timestamp |
+
+**Default Rules:**
+- Weekend Premium: +20% for Friday/Saturday nights (priority 10)
+- Early Bird Discount: -15% for bookings 30+ days in advance (priority 5)
+- Long Stay Discount: -10% for 7+ night stays (priority 8)
+
+#### **audit_logs**
+Comprehensive tracking of all critical operations for compliance.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| id | Integer | PK | Log ID |
+| user_id | Integer | FK(users), NULL | User who performed action |
+| username | String(50) | NULL | Denormalized username |
+| action | String(50) | NOT NULL | CREATE \| UPDATE \| DELETE \| LOGIN_SUCCESS \| etc. |
+| entity_type | String(50) | NOT NULL | booking \| payment \| room \| user \| etc. |
+| entity_id | Integer | NULL | ID of affected entity |
+| description | String(500) | NULL | Human-readable description |
+| old_values | String(2000) | NULL | JSON of old values |
+| new_values | String(2000) | NULL | JSON of new values |
+| ip_address | String(45) | NULL | Client IP (IPv4/IPv6) |
+| user_agent | String(500) | NULL | Client user agent |
+| created_at | DateTime | DEFAULT=now(), INDEXED | Timestamp |
+
 ---
 
 ## API Endpoints
@@ -386,6 +450,29 @@ Defines refund tiers based on days before check-in.
 | GET | /invoices/ | Bearer JWT | ANY | List all invoices |
 | POST | /invoices/{booking_id} | Bearer JWT | MANAGER, ADMIN | Generate invoice for booking |
 | GET | /invoices/{invoice_id}/pdf | Bearer JWT | ANY | Download invoice as PDF |
+
+### **Pricing Rules** (Dynamic pricing engine)
+| Method | Endpoint | Auth | Role | Description |
+|--------|----------|------|------|-------------|
+| GET | /pricing-rules/ | Bearer JWT | Any | List all pricing rules with filters |
+| POST | /pricing-rules/ | Bearer JWT | MANAGER, ADMIN | Create new pricing rule |
+| GET | /pricing-rules/{id} | Bearer JWT | Any | Get specific pricing rule |
+| PATCH | /pricing-rules/{id} | Bearer JWT | MANAGER, ADMIN | Update pricing rule |
+| DELETE | /pricing-rules/{id} | Bearer JWT | ADMIN | Delete pricing rule |
+| POST | /pricing-rules/calculate-price | Bearer JWT | Any | Calculate price with applied rules |
+
+**Query Parameters (Pricing Rules):**
+- `is_active` (bool) - Filter by active status
+- `rule_type` - Filter by type (seasonal, weekend, early_bird, last_minute, loyalty, long_stay, custom)
+
+**Pricing Rule Types:**
+- `seasonal` - Date range based pricing (e.g., summer rates)
+- `weekend` - Day of week premiums (Friday/Saturday)
+- `early_bird` - Advance booking discounts (e.g., 30+ days)
+- `last_minute` - Last-minute booking adjustments
+- `loyalty` - Loyalty tier based discounts
+- `long_stay` - Extended stay discounts (e.g., 7+ nights)
+- `custom` - Custom business rules
 
 ### **Reports** (Manager/Admin analytics)
 | Method | Endpoint | Auth | Role | Description |
@@ -641,7 +728,35 @@ Defines refund tiers based on days before check-in.
   - app.js – Application initialization (auto-loads data on tab switch)
   - admin.js – User management
 
-### **7. Cancellation & Refund Policies**
+### **7. Dynamic Pricing Rules**
+- **Rule-based pricing engine** with 7 rule types:
+  - **seasonal** – Date range based pricing (e.g., summer/winter rates)
+  - **weekend** – Day-of-week premiums (Friday/Saturday)
+  - **early_bird** – Advance booking discounts (e.g., 30+ days)
+  - **last_minute** – Last-minute booking adjustments
+  - **loyalty** – Loyalty tier based discounts
+  - **long_stay** – Extended stay discounts (e.g., 7+ nights)
+  - **custom** – Custom business rules
+- **Priority-based stacking** – Multiple rules apply cumulatively
+- **Flexible adjustments** – Percentage or fixed amount
+- **Advanced filtering:**
+  - Room type specific
+  - Date ranges (start_date/end_date)
+  - Days of week (JSON array)
+  - Minimum nights required
+  - Advance booking windows
+  - Loyalty tier requirements
+- **Price calculation API** returns:
+  - Base price and adjusted price
+  - List of all applied rules with before/after prices
+  - Total savings amount
+  - Detailed breakdown for transparency
+- **Default rules included:**
+  - Weekend Premium: +20%
+  - Early Bird: -15% (30+ days advance)
+  - Long Stay: -10% (7+ nights)
+
+### **8. Cancellation & Refund Policies**
 - **ADMIN:** Full system access – user management, deletions, role changes
 
 Enforced via `@require_role(PermissionLevel.ADMIN, PermissionLevel.MANAGER)` dependency.
