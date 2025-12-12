@@ -39,6 +39,26 @@ class PaymentMethod(Enum):
     BANK_TRANSFER = "bank_transfer"
     ONLINE = "online"
 
+class TaskStatus(Enum):
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    VERIFIED = "verified"
+    FAILED = "failed"
+
+class TaskType(Enum):
+    CLEANING = "cleaning"
+    MAINTENANCE = "maintenance"
+    INSPECTION = "inspection"
+    DEEP_CLEANING = "deep_cleaning"
+    TURNDOWN = "turndown"
+
+class TaskPriority(Enum):
+    LOW = "low"
+    NORMAL = "normal"
+    HIGH = "high"
+    URGENT = "urgent"
+
 
 # -----------------------------
 # User
@@ -210,6 +230,7 @@ class Room(Base):
     # Relationships
     room_type = relationship("RoomType", back_populates="rooms")
     bookings = relationship("Booking", back_populates="room")
+    housekeeping_tasks = relationship("HousekeepingTask", back_populates="room", cascade="all, delete-orphan")
 
 
 # -----------------------------
@@ -329,6 +350,62 @@ class CancellationPolicy(Base):
 
     def __repr__(self):
         return f"<CancellationPolicy {self.name}>"
+
+# -----------------------------
+# Housekeeping Task
+# -----------------------------
+class HousekeepingTask(Base):
+    """Track cleaning, maintenance, and inspection tasks for rooms"""
+    __tablename__ = "housekeeping_tasks"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    
+    # Relationships
+    room_id = Column(Integer, ForeignKey("rooms.id", ondelete="CASCADE"), nullable=False, index=True)
+    assigned_to = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    verified_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    booking_id = Column(Integer, ForeignKey("bookings.id", ondelete="SET NULL"), nullable=True, index=True)
+    
+    # Task details
+    task_type = Column(String(20), nullable=False, index=True)  # cleaning, maintenance, etc.
+    priority = Column(String(10), nullable=False, server_default="normal", index=True)
+    status = Column(String(20), nullable=False, server_default="pending", index=True)
+    
+    # Scheduling
+    scheduled_date = Column(Date, nullable=False, index=True)
+    scheduled_time = Column(String(10), nullable=True)  # HH:MM format
+    
+    # Timing tracking
+    started_at = Column(DateTime(timezone=True), nullable=True)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+    verified_at = Column(DateTime(timezone=True), nullable=True)
+    
+    # Notes and details
+    notes = Column(String(500), nullable=True)  # Initial instructions/notes
+    completion_notes = Column(String(500), nullable=True)  # Notes added on completion
+    verification_notes = Column(String(500), nullable=True)  # Notes added on verification
+    
+    # Duration tracking
+    estimated_duration_minutes = Column(Integer, default=30)
+    actual_duration_minutes = Column(Integer, nullable=True)
+    
+    # Special flags
+    is_checkout_cleaning = Column(Boolean, default=False, index=True)  # Auto-created on checkout
+    
+    # Timestamps
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    room = relationship("Room", back_populates="housekeeping_tasks")
+    assigned_user = relationship("User", foreign_keys=[assigned_to])
+    creator = relationship("User", foreign_keys=[created_by])
+    verifier = relationship("User", foreign_keys=[verified_by])
+    booking = relationship("Booking")
+    
+    def __repr__(self):
+        return f"<HousekeepingTask {self.task_type} for Room {self.room_id} - {self.status}>"
 
 # -----------------------------
 # Audit Log

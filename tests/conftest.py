@@ -113,3 +113,35 @@ def regular_headers(regular_user):
     token = create_access_token(subject=regular_user.username)
     return {"Authorization": f"Bearer {token}"}
 
+
+@pytest.fixture(scope="function")
+def room_type(db):
+    """Create a test room type"""
+    from decimal import Decimal
+    room_type = models.RoomType(
+        name="Deluxe Suite",
+        base_price=Decimal("100.00"),
+        capacity=2,
+        description="Luxury room"
+    )
+    db.add(room_type)
+    db.commit()
+    db.refresh(room_type)
+    return room_type
+
+
+@pytest.fixture(scope="function")
+def room(db, room_type):
+    """Create a test room"""
+    from decimal import Decimal
+    room = models.Room(
+        number="101",
+        room_type_id=room_type.id,
+        floor=1,
+        price_per_night=Decimal("100.00"),
+        maintenance_status="available"
+    )
+    db.add(room)
+    db.commit()
+    db.refresh(room)
+    return room

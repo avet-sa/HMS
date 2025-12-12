@@ -13,7 +13,7 @@ import os
 import logging
 
 # Import routers
-from backend.app.api import reports, rooms, guests, bookings, auth, room_types, users, payments, invoices, audit_logs, pricing_rules
+from backend.app.api import reports, rooms, guests, bookings, auth, room_types, users, payments, invoices, audit_logs, pricing_rules, housekeeping
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -88,6 +88,7 @@ app.include_router(invoices.router, tags=["Invoices"])
 app.include_router(reports.router, tags=["Reports"])
 app.include_router(audit_logs.router, tags=["Audit Logs"])
 app.include_router(pricing_rules.router, tags=["Pricing Rules"])
+app.include_router(housekeeping.router, tags=["Housekeeping"])
 
 if os.path.exists("frontend"):
     app.mount("/static", StaticFiles(directory="frontend"), name="static")
