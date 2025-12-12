@@ -200,10 +200,70 @@ class BookingService:
                 actual_nights = (booking.check_out - booking.check_in).days
             booking.final_bill = actual_nights * booking.price_per_night
         
+        # Auto-create housekeeping task for checkout cleaning
+        BookingService._create_checkout_cleaning_task(db, booking)
+        
+        # Update room to maintenance status (needs cleaning)
+        room = db.query(models.Room).filter(models.Room.id == booking.room_id).first()
+        if room:
+            room.maintenance_status = models.RoomMaintenanceStatus.MAINTENANCE
+        
         db.commit()
         db.refresh(booking)
         return booking
 
+    @staticmethod
+    def _create_checkout_cleaning_task(db: Session, booking: models.Booking):
+        """Auto-create a housekeeping task after checkout."""
+        # Import here to avoid circular dependency
+        from backend.app.services.housekeeping_service import HousekeepingService
+        from backend.app.schemas.housekeeping import HousekeepingTaskCreate
+        
+        # Determine priority based on next booking
+        priority = "normal"
+        scheduled_date = date.today()
+        
+        # Check if there's a next booking soon
+        next_booking = db.query(models.Booking).filter(
+            models.Booking.room_id == booking.room_id,
+            models.Booking.check_in >= date.today(),
+            models.Booking.status.in_([
+                models.BookingStatus.CONFIRMED.value,
+                models.BookingStatus.PENDING.value
+            ])
+        ).order_by(models.Booking.check_in).first()
+        
+        if next_booking:
+            days_until_next = (next_booking.check_in - date.today()).days
+            if days_until_next == 0:
+                priority = "urgent"
+                scheduled_date = date.today()
+            elif days_until_next == 1:
+                priority = "high"
+                scheduled_date = date.today()
+            else:
+                priority = "normal"
+                scheduled_date = date.today()
+        
+        # Create the task
+        task_data = HousekeepingTaskCreate(
+            room_id=booking.room_id,
+            task_type="cleaning",
+            priority=priority,
+            scheduled_date=scheduled_date,
+            scheduled_time="10:00",  # Default morning time
+            notes=f"Checkout cleaning for booking #{booking.booking_number}",
+            estimated_duration_minutes=45,
+            booking_id=booking.id,
+            is_checkout_cleaning=True
+        )
+        
+        service = HousekeepingService(db)
+        # Get a system user ID (could be the user who checked out, or use a system user)
+        # For now, we'll use the booking's created_by if available
+        created_by_id = 1  # Default to admin/system user
+        service.create_task(task_data, created_by_id=created_by_id)
+    
     @staticmethod
     def cancel_booking(db: Session, booking_id: int):
         """Transition from PENDING/CONFIRMED to CANCELLED and auto-process refunds."""

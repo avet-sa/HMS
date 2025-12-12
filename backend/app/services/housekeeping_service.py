@@ -70,6 +70,8 @@ class HousekeepingService:
             booking_id=task_data.booking_id,
             notes=task_data.notes,
             created_by=created_by_id,
+            estimated_duration_minutes=task_data.estimated_duration_minutes,
+            is_checkout_cleaning=task_data.is_checkout_cleaning,
         )
 
         self.db.add(task)
@@ -337,6 +339,13 @@ class HousekeepingService:
         task.verified_at = datetime.now()
         if verification_data.verification_notes:
             task.verification_notes = verification_data.verification_notes
+
+        # If this is a checkout cleaning task, set room back to available
+        if task.is_checkout_cleaning:
+            from backend.app.db.models import Room, RoomMaintenanceStatus
+            room = self.db.query(Room).filter(Room.id == task.room_id).first()
+            if room and room.maintenance_status == RoomMaintenanceStatus.MAINTENANCE:
+                room.maintenance_status = RoomMaintenanceStatus.AVAILABLE
 
         self.db.commit()
         self.db.refresh(task)

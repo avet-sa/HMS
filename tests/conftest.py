@@ -139,9 +139,26 @@ def room(db, room_type):
         room_type_id=room_type.id,
         floor=1,
         price_per_night=Decimal("100.00"),
-        maintenance_status="available"
+        maintenance_status=models.RoomMaintenanceStatus.AVAILABLE
     )
     db.add(room)
     db.commit()
     db.refresh(room)
     return room
+
+
+@pytest.fixture(scope="function")
+def guest(db):
+    """Create a test guest"""
+    from datetime import date
+    guest = models.Guest(
+        name="John",
+        surname="Doe",
+        email="john.doe@test.com",
+        phone_number="+1234567890",
+        is_active=True
+    )
+    db.add(guest)
+    db.commit()
+    db.refresh(guest)
+    return guest

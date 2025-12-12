@@ -17,6 +17,7 @@ class HousekeepingTaskBase(BaseModel):
     estimated_duration_minutes: int = 30
     assigned_to: Optional[int] = None
     booking_id: Optional[int] = None
+    is_checkout_cleaning: bool = False
     
     @field_validator("task_type")
     @classmethod

@@ -14,7 +14,7 @@ from backend.app.utils.audit import log_booking_action
 
 router = APIRouter()
 
-@router.post("/", response_model=BookingResponse)
+@router.post("/", response_model=BookingResponse, status_code=201)
 def create_booking(
     booking_in: BookingCreate,
     request: Request,
