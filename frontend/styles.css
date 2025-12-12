@@ -803,3 +803,321 @@ input::placeholder {
   max-width: 100%;
   max-height: 100%;
 }
+
+/* ==================== Housekeeping Styles ==================== */
+
+/* Dashboard Stats */
+.housekeeping-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.housekeeping-stats .stat-card {
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: transform 0.2s;
+}
+
+.housekeeping-stats .stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.housekeeping-stats .stat-icon {
+  font-size: 2rem;
+}
+
+.housekeeping-stats .stat-info h3 {
+  font-size: 1.5rem;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.housekeeping-stats .stat-info p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+/* Stat card colors */
+.stat-tasks { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+.stat-pending { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; }
+.stat-progress { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; }
+.stat-completed { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; }
+.stat-urgent { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; }
+.stat-rooms { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); color: white; }
+
+.stat-tasks .stat-info h3,
+.stat-pending .stat-info h3,
+.stat-progress .stat-info h3,
+.stat-completed .stat-info h3,
+.stat-urgent .stat-info h3,
+.stat-rooms .stat-info h3,
+.stat-tasks .stat-info p,
+.stat-pending .stat-info p,
+.stat-progress .stat-info p,
+.stat-completed .stat-info p,
+.stat-urgent .stat-info p,
+.stat-rooms .stat-info p {
+  color: white;
+}
+
+/* Task Filters */
+.housekeeping-filters {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.filter-group label {
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.filter-group select {
+  padding: 0.5rem;
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+/* Priority Badges */
+.badge.priority-urgent {
+  background: #ef4444;
+  color: white;
+}
+
+.badge.priority-high {
+  background: #f59e0b;
+  color: white;
+}
+
+.badge.priority-normal {
+  background: #3b82f6;
+  color: white;
+}
+
+.badge.priority-low {
+  background: #6b7280;
+  color: white;
+}
+
+/* Status Badges */
+.badge.status-pending {
+  background: #f59e0b;
+  color: white;
+}
+
+.badge.status-in_progress {
+  background: #3b82f6;
+  color: white;
+}
+
+.badge.status-completed {
+  background: #10b981;
+  color: white;
+}
+
+.badge.status-verified {
+  background: #8b5cf6;
+  color: white;
+}
+
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.25rem;
+  padding: 0.25rem;
+  border-radius: var(--radius-sm);
+  transition: transform 0.2s, background 0.2s;
+}
+
+.btn-icon:hover {
+  transform: scale(1.2);
+  background: var(--bg-hover);
+}
+
+/* Room Status Summary */
+.room-status-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.status-badge.status-available {
+  background: #10b981;
+  color: white;
+}
+
+.status-badge.status-maintenance {
+  background: #f59e0b;
+  color: white;
+}
+
+.status-badge.status-out-of-service {
+  background: #ef4444;
+  color: white;
+}
+
+/* Room Grid Modal */
+.room-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.room-card {
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 2px solid transparent;
+}
+
+.room-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.room-card.status-available {
+  background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
+  border-color: #10b981;
+}
+
+.room-card.status-maintenance {
+  background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+  border-color: #f59e0b;
+}
+
+.room-card.status-out_of_service {
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+  border-color: #ef4444;
+}
+
+.room-card.has-tasks {
+  border-style: dashed;
+  border-width: 3px;
+}
+
+.room-number {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.room-type {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.room-status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  padding: 0.25rem 0.5rem;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 4px;
+  display: inline-block;
+  margin-bottom: 0.5rem;
+}
+
+.room-tasks {
+  font-size: 0.75rem;
+  color: var(--danger);
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.room-booking {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .housekeeping-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .housekeeping-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filter-group {
+    width: 100%;
+  }
+  
+  .filter-group select {
+    flex: 1;
+  }
+  
+  .room-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .housekeeping-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .room-grid {
+    grid-template-columns: 1fr;
+  }
+}

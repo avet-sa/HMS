@@ -55,6 +55,7 @@
         <button class="nav-tab" data-tab="payments">Payments</button>
         <button class="nav-tab" data-tab="invoices">Invoices</button>
         <button class="nav-tab" data-tab="reports">Reports</button>
+        <button class="nav-tab" data-tab="housekeeping">Housekeeping</button>
       </nav>
 
       <!-- Rooms Tab -->
@@ -290,6 +291,186 @@
         </div>
       </section>
 
+      <!-- Housekeeping Tab -->
+      <section id="housekeeping" class="tab-content">
+        <div class="section-header">
+          <h2>Housekeeping Management</h2>
+          <button id="btn-refresh-housekeeping" class="btn btn-secondary btn-sm">Refresh</button>
+        </div>
+        <p id="housekeeping-message" class="message" aria-live="polite"></p>
+
+        <!-- Dashboard Stats -->
+        <div class="housekeeping-stats">
+          <div class="stat-card stat-tasks">
+            <div class="stat-icon">📋</div>
+            <div class="stat-info">
+              <h3 id="hk-total-tasks">0</h3>
+              <p>Total Tasks</p>
+            </div>
+          </div>
+          <div class="stat-card stat-pending">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-info">
+              <h3 id="hk-pending-tasks">0</h3>
+              <p>Pending</p>
+            </div>
+          </div>
+          <div class="stat-card stat-progress">
+            <div class="stat-icon">🔄</div>
+            <div class="stat-info">
+              <h3 id="hk-in-progress-tasks">0</h3>
+              <p>In Progress</p>
+            </div>
+          </div>
+          <div class="stat-card stat-completed">
+            <div class="stat-icon">✅</div>
+            <div class="stat-info">
+              <h3 id="hk-completed-tasks">0</h3>
+              <p>Completed Today</p>
+            </div>
+          </div>
+          <div class="stat-card stat-urgent">
+            <div class="stat-icon">🔥</div>
+            <div class="stat-info">
+              <h3 id="hk-urgent-tasks">0</h3>
+              <p>Urgent</p>
+            </div>
+          </div>
+          <div class="stat-card stat-rooms">
+            <div class="stat-icon">🚪</div>
+            <div class="stat-info">
+              <h3 id="hk-rooms-maintenance">0</h3>
+              <p>In Maintenance</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Task Filters -->
+        <div class="housekeeping-filters">
+          <div class="filter-group">
+            <label for="hk-filter-status">Status:</label>
+            <select id="hk-filter-status">
+              <option value="">All</option>
+              <option value="pending">Pending</option>
+              <option value="in_progress">In Progress</option>
+              <option value="completed">Completed</option>
+              <option value="verified">Verified</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="hk-filter-priority">Priority:</label>
+            <select id="hk-filter-priority">
+              <option value="">All</option>
+              <option value="urgent">Urgent</option>
+              <option value="high">High</option>
+              <option value="normal">Normal</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="hk-filter-type">Type:</label>
+            <select id="hk-filter-type">
+              <option value="">All</option>
+              <option value="cleaning">Cleaning</option>
+              <option value="maintenance">Maintenance</option>
+              <option value="inspection">Inspection</option>
+            </select>
+          </div>
+          <button id="btn-apply-filters" class="btn btn-secondary btn-sm">Apply Filters</button>
+          <button id="btn-clear-filters" class="btn btn-secondary btn-sm">Clear</button>
+        </div>
+
+        <div class="content-wrapper">
+          <!-- Task List -->
+          <div class="list-panel" style="flex: 2;">
+            <h3>Housekeeping Tasks</h3>
+            <div class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Room</th>
+                    <th>Type</th>
+                    <th>Priority</th>
+                    <th>Status</th>
+                    <th>Scheduled</th>
+                    <th>Assigned To</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="housekeeping-task-list">
+                  <!-- Tasks will be populated here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Create Task / Room Status -->
+          <div class="form-panel">
+            <h3>Create Task</h3>
+            <form id="housekeeping-task-form">
+              <div class="form-group">
+                <label for="hk-room-id">Room ID</label>
+                <input type="number" id="hk-room-id" placeholder="101" required>
+              </div>
+              <div class="form-group">
+                <label for="hk-task-type">Task Type</label>
+                <select id="hk-task-type" required>
+                  <option value="cleaning">Cleaning</option>
+                  <option value="maintenance">Maintenance</option>
+                  <option value="inspection">Inspection</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="hk-priority">Priority</label>
+                <select id="hk-priority" required>
+                  <option value="normal" selected>Normal</option>
+                  <option value="low">Low</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="hk-scheduled-date">Scheduled Date</label>
+                <input type="date" id="hk-scheduled-date" required>
+              </div>
+              <div class="form-group">
+                <label for="hk-scheduled-time">Scheduled Time</label>
+                <input type="time" id="hk-scheduled-time" value="10:00">
+              </div>
+              <div class="form-group">
+                <label for="hk-notes">Notes</label>
+                <textarea id="hk-notes" rows="3" placeholder="Task details..."></textarea>
+              </div>
+              <div class="form-group">
+                <label for="hk-duration">Est. Duration (min)</label>
+                <input type="number" id="hk-duration" value="30" min="5" max="480">
+              </div>
+              <button type="button" id="btn-create-task" class="btn btn-primary btn-full">Create Task</button>
+            </form>
+
+            <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+              <h3>Room Status Overview</h3>
+              <div id="room-status-summary" class="room-status-summary">
+                <div class="status-item">
+                  <span class="status-badge status-available">Available</span>
+                  <span id="rooms-available-count">-</span>
+                </div>
+                <div class="status-item">
+                  <span class="status-badge status-maintenance">Maintenance</span>
+                  <span id="rooms-maintenance-count">-</span>
+                </div>
+                <div class="status-item">
+                  <span class="status-badge status-out-of-service">Out of Service</span>
+                  <span id="rooms-out-of-service-count">-</span>
+                </div>
+              </div>
+              <button id="btn-view-room-grid" class="btn btn-secondary btn-full" style="margin-top: 1rem;">View Room Grid</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- Guests Tab -->
       <section id="guests" class="tab-content">
         <div class="section-header">
@@ -422,6 +603,7 @@
   <script src="js/auth.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/reports.js"></script>
+  <script src="js/housekeeping.js"></script>
   <!-- Main app (must be last) -->
   <script src="js/app.js"></script>
 </body>
