@@ -72,7 +72,7 @@ def test_list_bookings(client, admin_headers, room, guest):
         headers=admin_headers,
     )
     response = client.get("/bookings/", headers=admin_headers)
-    assert response.status_code == 201
+    assert response.status_code == 200
     assert len(response.json()) >= 1
 
 
