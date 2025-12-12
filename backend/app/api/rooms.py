@@ -34,7 +34,7 @@ def create_room(
             "number": room.number,
             "room_type_id": room.room_type_id,
             "price_per_night": str(room.price_per_night),
-            "status": room.status.value if room.status else None
+            "maintenance_status": room.maintenance_status.value if room.maintenance_status else None
         },
         request=request
     )
@@ -81,14 +81,14 @@ def update_room(
     
     old_values = {
         "price_per_night": str(old_room.price_per_night),
-        "status": old_room.status.value if old_room.status else None
+        "maintenance_status": old_room.maintenance_status.value if old_room.maintenance_status else None
     }
     
     room = RoomService.update_room(db, room_id, room_in)
     
     new_values = {
         "price_per_night": str(room.price_per_night),
-        "status": room.status.value if room.status else None
+        "maintenance_status": room.maintenance_status.value if room.maintenance_status else None
     }
     
     # Log audit

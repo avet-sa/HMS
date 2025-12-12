@@ -35,8 +35,8 @@ def create_booking(
                 "booking_number": booking.booking_number,
                 "guest_id": booking.guest_id,
                 "room_id": booking.room_id,
-                "check_in_date": str(booking.check_in_date),
-                "check_out_date": str(booking.check_out_date),
+                "check_in": str(booking.check_in),
+                "check_out": str(booking.check_out),
                 "status": booking.status.value
             },
             request=request
