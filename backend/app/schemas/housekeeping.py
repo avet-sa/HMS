@@ -105,6 +105,7 @@ class TaskAssignRequest(BaseModel):
 class TaskCompletionRequest(BaseModel):
     """Schema for completing a task"""
     completion_notes: Optional[str] = None
+    actual_duration_minutes: Optional[int] = None
 
 
 class TaskVerificationRequest(BaseModel):

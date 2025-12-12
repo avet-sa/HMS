@@ -310,6 +310,8 @@ class HousekeepingService:
         task.completed_at = datetime.now()
         if completion_data.completion_notes:
             task.completion_notes = completion_data.completion_notes
+        if completion_data.actual_duration_minutes is not None:
+            task.actual_duration_minutes = completion_data.actual_duration_minutes
 
         self.db.commit()
         self.db.refresh(task)
