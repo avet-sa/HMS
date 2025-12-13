@@ -1194,8 +1194,15 @@ if booking.status != 'checked_in' and booking.check_in < today:
 
 ---
 
-## License & Credits
+## License
 
-Built as a comprehensive demonstration of enterprise Python web development patterns, suitable for production deployment or academic purposes.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
+
+## Author
+
+**Avet Sargsyan**  
+- GitHub: [@avet-sa](https://github.com/avet-sa)
+- Email: sargsyan.avet27@gmail.com
+- LinkedIn: [Avet Sargsyan](https://www.linkedin.com/in/avet-sargsyan)
